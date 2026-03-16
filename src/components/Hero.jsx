@@ -7,9 +7,9 @@ export default function Hero() {
       id="about"
       className="relative overflow-hidden text-white"
       style={{
-        backgroundImage: 'url(/images/img1_road_at_dawn.png)',
+        backgroundImage: 'url(/images/road-entrance-paved.png)',
         backgroundSize: 'cover',
-        backgroundPosition: 'center 40%',
+        backgroundPosition: 'center 50%',
       }}
     >
       {/* Dark overlay so text stays legible over the photo */}
