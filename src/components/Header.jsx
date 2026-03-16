@@ -5,6 +5,7 @@ import { GiRoad } from 'react-icons/gi'
 const navLinks = [
   { href: '#about',    label: 'About' },
   { href: '#funding',  label: 'Funding' },
+  { href: '#map',      label: 'Map' },
   { href: '#photos',   label: 'Photos' },
   { href: '#community', label: 'Community' },
   { href: '#pledge',   label: 'Pledge Now' },
