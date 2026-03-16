@@ -1,5 +1,5 @@
 import { GiRoad } from 'react-icons/gi'
-import { MdLocationOn, MdEmail } from 'react-icons/md'
+import { MdEmail, MdPhone } from 'react-icons/md'
 
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="bg-stone-900 text-stone-400 py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 text-white font-bold text-lg mb-3">
@@ -16,7 +16,7 @@ export default function Footer() {
             </div>
             <p className="text-sm leading-relaxed">
               A community-driven initiative to pave W Sunrise Drive in Laveen, AZ.
-              25 households, one shared goal.
+              20 households, one shared goal.
             </p>
           </div>
 
@@ -25,37 +25,17 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-3">Contact</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
-                <MdLocationOn className="text-sunrise-400 flex-shrink-0" />
-                <span>2817 W Sunrise Dr, Laveen, AZ 85339</span>
+                <MdEmail className="text-sunrise-400 flex-shrink-0" />
+                <a href="mailto:RickQTran@gmail.com" className="hover:text-white transition-colors">
+                  RickQTran@gmail.com
+                </a>
               </div>
               <div className="flex items-center gap-2">
-                <MdEmail className="text-sunrise-400 flex-shrink-0" />
-                <a href="mailto:pave@sunrisedr.community" className="hover:text-white transition-colors">
-                  pave@sunrisedr.community
+                <MdPhone className="text-sunrise-400 flex-shrink-0" />
+                <a href="tel:4805448983" className="hover:text-white transition-colors">
+                  480-544-8983
                 </a>
               </div>
-            </div>
-          </div>
-
-          {/* Quick links */}
-          <div>
-            <h4 className="text-white font-semibold mb-3">Quick Links</h4>
-            <div className="space-y-2 text-sm">
-              {[
-                { href: '#about', label: 'About the Project' },
-                { href: '#funding', label: 'Funding Tracker' },
-                { href: '#photos', label: 'Photo Gallery' },
-                { href: '#community', label: 'Community Board' },
-                { href: '#pledge', label: 'Pledge Now' },
-              ].map(link => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="block hover:text-white transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
             </div>
           </div>
         </div>
