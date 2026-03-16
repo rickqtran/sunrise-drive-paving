@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { FiUsers, FiDollarSign, FiTarget, FiTrendingUp } from 'react-icons/fi'
 
-const GOAL = 80000
-const TOTAL_HOUSES = 25
+const GOAL = 200000
+const TOTAL_HOUSES = 20
 
 // Avatar colors for pledge list
 const AVATAR_COLORS = [
@@ -21,7 +21,7 @@ function formatCurrency(n) {
 export default function FundingTracker({ pledges }) {
   const totalPledged = useMemo(() => pledges.reduce((sum, p) => sum + Number(p.amount), 0), [pledges])
   const percentFunded = Math.min(100, Math.round((totalPledged / GOAL) * 100))
-  const householdsIn = pledges.length
+  const householdsIn = useMemo(() => new Set(pledges.map(p => p.house_number).filter(Boolean)).size, [pledges])
   const remaining = Math.max(0, GOAL - totalPledged)
 
   const statsCards = [
@@ -48,9 +48,9 @@ export default function FundingTracker({ pledges }) {
     },
     {
       icon: <FiTrendingUp className="text-violet-500" size={22} />,
-      label: 'Avg per Pledge',
-      value: householdsIn > 0 ? formatCurrency(totalPledged / householdsIn) : '$0',
-      sub: `${formatCurrency(GOAL / TOTAL_HOUSES)} needed avg`,
+      label: 'Avg Target Pledge per Household',
+      value: formatCurrency(GOAL / TOTAL_HOUSES),
+      sub: `based on ${formatCurrency(GOAL)} goal ÷ ${TOTAL_HOUSES} households`,
       bg: 'bg-violet-50 border-violet-100',
     },
   ]
