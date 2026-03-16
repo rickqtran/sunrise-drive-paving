@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import Hero from './components/Hero'
+import PhotoGallery from './components/PhotoGallery'
+import WhyPave from './components/WhyPave'
 import FundingTracker from './components/FundingTracker'
 import NeighborhoodMap from './components/NeighborhoodMap'
-import PhotoGallery from './components/PhotoGallery'
+import TieredPledge from './components/TieredPledge'
+import FAQ from './components/FAQ'
 import CommunityBoard from './components/CommunityBoard'
 import Footer from './components/Footer'
 import { fetchPledges, subscribeToPledges } from './lib/supabase'
@@ -55,8 +58,11 @@ export default function App() {
       <main className="flex-1">
         <Hero />
         <PhotoGallery />
+        <WhyPave />
         <FundingTracker pledges={pledges} loading={loading} />
         <NeighborhoodMap pledges={pledges} onNewPledge={handleNewPledge} />
+        <TieredPledge onNewPledge={handleNewPledge} />
+        <FAQ />
         <CommunityBoard />
       </main>
       <Footer />

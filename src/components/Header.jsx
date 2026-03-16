@@ -3,11 +3,13 @@ import { FiMenu, FiX } from 'react-icons/fi'
 import { GiRoad } from 'react-icons/gi'
 
 const navLinks = [
-  { href: '#about',    label: 'About' },
-  { href: '#photos',   label: 'Photos' },
-  { href: '#funding',  label: 'Funding' },
-  { href: '#map',      label: 'Pledge' },
-  { href: '#community', label: 'Chat' },
+  { href: '#about',       label: 'About' },
+  { href: '#photos',      label: 'Photos' },
+  { href: '#why',         label: 'Why Pave' },
+  { href: '#funding',     label: 'Funding' },
+  { href: '#pledge-form', label: 'Pledge' },
+  { href: '#faq',         label: 'FAQ' },
+  { href: '#community',   label: 'Chat' },
 ]
 
 export default function Header() {
