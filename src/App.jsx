@@ -55,9 +55,9 @@ export default function App() {
       <Header />
       <main className="flex-1">
         <Hero />
+        <PhotoGallery />
         <FundingTracker pledges={pledges} loading={loading} />
         <NeighborhoodMap pledges={pledges} onNewPledge={handleNewPledge} />
-        <PhotoGallery />
         <CommunityBoard />
         <PledgeForm onNewPledge={handleNewPledge} />
       </main>
