@@ -145,6 +145,7 @@ const PARCELS = [
     mailingAddress: '3308 W Wescott Dr, Phoenix, AZ 85027',
     city: 'Laveen 85339',
     x: 880, y: N_TOP, w: 100, h: NH, side: 'north',
+    emptyLot: true,
   },
   {
     id: '300-15-003R',
@@ -154,6 +155,7 @@ const PARCELS = [
     propAddress: '10228 S 27th Ave',
     city: 'Laveen 85339',
     x: 980, y: N_TOP, w: 95, h: NH, side: 'north',
+    emptyLot: true,
   },
   {
     id: '300-15-003Q',
@@ -163,6 +165,7 @@ const PARCELS = [
     propAddress: 'W Sunrise Dr',
     city: 'Laveen 85339',
     x: 1075, y: N_TOP, w: 140, h: NH, side: 'north',
+    emptyLot: true,
   },
 
   // ── South side main parcels (below road, west→east) ─────────────────────────
@@ -214,6 +217,7 @@ const PARCELS = [
     mailingAddress: '4930 W Redfield Rd, Laveen AZ 85339',
     city: 'Laveen 85339',
     x: 555, y: ROAD_Y2, w: 85, h: SH, side: 'south',
+    emptyLot: true,
   },
   {
     id: '300-15-007H',
@@ -224,6 +228,7 @@ const PARCELS = [
     mailingAddress: '1602 W Roma Ave, Phoenix AZ 85015',
     city: 'Laveen 85339',
     x: 640, y: ROAD_Y2, w: 100, h: SH, side: 'south',
+    emptyLot: true,
   },
   {
     id: '300-15-007I',
@@ -469,12 +474,19 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                       >{line}</text>
                     ))}
 
-                    {/* Pledge total (bottom center) */}
-                    {total > 0 && (
+                    {/* Pledge status (bottom center) */}
+                    {p.emptyLot ? (
                       <text
                         x={pcx} y={p.y + p.h - 8}
-                        textAnchor="middle" fontSize="7.5" fill="#86efac" fontWeight="700"
-                      >${total.toLocaleString()}</text>
+                        textAnchor="middle" fontSize="7" fill="#78716c" fontStyle="italic"
+                      >Not Expected</text>
+                    ) : (
+                      <text
+                        x={pcx} y={p.y + p.h - 8}
+                        textAnchor="middle" fontSize="7.5"
+                        fill={total > 0 ? '#86efac' : '#a8a29e'}
+                        fontWeight={total > 0 ? '700' : '400'}
+                      >Pledged: ${total.toLocaleString()}</text>
                     )}
                   </g>
                 )
@@ -545,7 +557,12 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                 {/* Pledge status */}
                 <div>
                   <p className="text-stone-500 text-xs uppercase tracking-wide font-semibold mb-2">Pledge Status</p>
-                  {selPledges.length > 0 ? (
+                  {sel.emptyLot ? (
+                    <div className="bg-stone-900/60 border border-stone-600 rounded-lg p-3 flex items-center gap-2">
+                      <FiInfo size={13} className="text-stone-500" />
+                      <span className="text-stone-400 text-sm italic">Not Expected (vacant lot)</span>
+                    </div>
+                  ) : selPledges.length > 0 ? (
                     <div className="bg-green-900/40 border border-green-700 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-1">
                         <FiCheckCircle size={13} className="text-green-400" />
@@ -562,13 +579,13 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                   ) : (
                     <div className="bg-stone-900/60 border border-stone-600 rounded-lg p-3 flex items-center gap-2">
                       <FiDollarSign size={13} className="text-stone-500" />
-                      <span className="text-stone-400 text-sm">Not yet pledged</span>
+                      <span className="text-stone-400 text-sm">Pledged: $0</span>
                     </div>
                   )}
                 </div>
 
-                {/* Pledge form */}
-                {formState === 'success' ? (
+                {/* Pledge form — hidden for vacant lots */}
+                {!sel.emptyLot && (formState === 'success' ? (
                   <div className="bg-green-900/40 border border-green-700 rounded-lg p-3 text-center">
                     <FiCheckCircle size={18} className="text-green-400 mx-auto mb-1" />
                     <p className="text-green-300 text-sm font-semibold">Pledge recorded! Thank you.</p>
@@ -616,7 +633,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                       <p className="text-red-400 text-xs text-center">Error saving — please try again.</p>
                     )}
                   </form>
-                )}
+                ))}
               </div>
             </div>
           ) : null}
