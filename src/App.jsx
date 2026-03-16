@@ -3,7 +3,6 @@ import Header from './components/Header'
 import Hero from './components/Hero'
 import FundingTracker from './components/FundingTracker'
 import NeighborhoodMap from './components/NeighborhoodMap'
-import PledgeForm from './components/PledgeForm'
 import PhotoGallery from './components/PhotoGallery'
 import CommunityBoard from './components/CommunityBoard'
 import Footer from './components/Footer'
@@ -59,7 +58,6 @@ export default function App() {
         <FundingTracker pledges={pledges} loading={loading} />
         <NeighborhoodMap pledges={pledges} onNewPledge={handleNewPledge} />
         <CommunityBoard />
-        <PledgeForm onNewPledge={handleNewPledge} />
       </main>
       <Footer />
     </div>

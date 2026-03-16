@@ -349,10 +349,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
         {/* Header */}
         <div className="text-center mb-8">
           <span className="text-sunrise-400 font-semibold text-sm uppercase tracking-wider">W Sunrise Dr · Laveen, AZ</span>
-          <h2 className="text-3xl font-bold text-white mt-1 mb-2">Neighborhood Parcel Map</h2>
-          <p className="text-stone-400 text-lg max-w-xl mx-auto">
-            Click any parcel to view resident info, pledge status, and add a commitment.
-          </p>
+          <h2 className="text-3xl font-bold text-white mt-1 mb-2">Residence Pledges</h2>
         </div>
 
         {/* Legend */}
@@ -622,15 +619,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                 )}
               </div>
             </div>
-          ) : (
-            /* Empty state hint */
-            <div className="hidden md:flex w-72 flex-shrink-0 bg-stone-900/50 border border-stone-700 rounded-xl items-center justify-center p-6 text-center">
-              <div>
-                <div className="text-4xl mb-3">🗺️</div>
-                <p className="text-stone-400 text-sm">Click any parcel on the map to view resident details and pledge status.</p>
-              </div>
-            </div>
-          )}
+          ) : null}
         </div>
 
         {/* Mobile scroll hint */}

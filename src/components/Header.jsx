@@ -6,9 +6,8 @@ const navLinks = [
   { href: '#about',    label: 'About' },
   { href: '#photos',   label: 'Photos' },
   { href: '#funding',  label: 'Funding' },
-  { href: '#map',      label: 'Map' },
-  { href: '#community', label: 'Community' },
-  { href: '#pledge',   label: 'Pledge Now' },
+  { href: '#map',      label: 'Pledge' },
+  { href: '#community', label: 'Chat' },
 ]
 
 export default function Header() {
@@ -26,7 +25,7 @@ export default function Header() {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
-            {navLinks.slice(0, -1).map(link => (
+            {navLinks.map(link => (
               <a
                 key={link.href}
                 href={link.href}
@@ -35,12 +34,6 @@ export default function Header() {
                 {link.label}
               </a>
             ))}
-            <a
-              href="#pledge"
-              className="ml-2 btn-primary text-sm py-2 px-5"
-            >
-              Pledge Now
-            </a>
           </nav>
 
           {/* Mobile hamburger */}

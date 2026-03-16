@@ -22,7 +22,7 @@ export default function Hero() {
         {/* Location badge */}
         <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-sm mb-6 backdrop-blur-sm">
           <MdLocationOn className="text-sunrise-300" />
-          <span className="text-stone-200">Laveen, AZ 85339</span>
+          <a href="https://maps.app.goo.gl/T2FUBPVy6h2exoeC8" target="_blank" rel="noopener noreferrer" className="text-stone-200 hover:text-white transition-colors">Sunrise Drive</a>
         </div>
 
         <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
@@ -56,15 +56,6 @@ export default function Hero() {
           ))}
         </div>
 
-        {/* CTA buttons */}
-        <div className="flex flex-wrap gap-4">
-          <a href="#pledge" className="btn-primary text-base">
-            Pledge Your Contribution
-          </a>
-          <a href="#funding" className="btn-secondary text-base text-stone-800">
-            See Current Progress
-          </a>
-        </div>
       </div>
 
       {/* Scroll hint */}

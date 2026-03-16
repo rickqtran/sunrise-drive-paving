@@ -97,7 +97,7 @@ export default function CommunityBoard() {
         {/* Header */}
         <div className="text-center mb-12">
           <span className="text-sunrise-500 font-semibold text-sm uppercase tracking-wider">Neighbor to Neighbor</span>
-          <h2 className="section-title mt-1">Community Board</h2>
+          <h2 className="section-title mt-1">Chat</h2>
           <p className="section-subtitle">Share your thoughts, ask questions, or show your support.</p>
           {isDemo && (
             <div className="inline-block bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-4 py-2 text-sm">
