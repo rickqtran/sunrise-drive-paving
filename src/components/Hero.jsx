@@ -32,29 +32,14 @@ export default function Hero() {
           </span>
         </h1>
 
-        <p className="text-xl md:text-2xl text-stone-300 mb-4 max-w-2xl leading-relaxed">
+        <p className="text-xl md:text-2xl text-white mb-4 max-w-2xl leading-relaxed">
           20 households. One goal. A smooth, safe, paved road for our neighborhood.
         </p>
 
-        <p className="text-stone-400 max-w-xl mb-10 text-lg">
+        <p className="text-white max-w-xl mb-10 text-lg">
           Our dirt road on W Sunrise Dr kicks up dust, creates potholes, and makes every
           rainstorm a muddy mess. Together, we can fix this — permanently.
         </p>
-
-        {/* Stats row */}
-        <div className="flex flex-wrap gap-6 mb-10">
-          {[
-            { value: '20', label: 'Households' },
-            { value: '$200K', label: 'Funding Goal' },
-            { value: '$10,000', label: 'Per Household' },
-            { value: '100%', label: 'Community Funded' },
-          ].map(stat => (
-            <div key={stat.label} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-5 py-3 text-center">
-              <div className="text-2xl font-bold text-sunrise-300">{stat.value}</div>
-              <div className="text-stone-400 text-sm">{stat.label}</div>
-            </div>
-          ))}
-        </div>
 
       </div>
 

@@ -4,8 +4,8 @@ import { FiX, FiCamera, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 const PHOTOS = [
   // ── Before ──────────────────────────────────────────────────────────────
   {
-    url: '/images/before-entrance.jpg',
-    thumb: '/images/before-entrance.jpg',
+    url: '/images/before-entrance.png',
+    thumb: '/images/before-entrance.png',
     caption: 'Road entrance today — unpaved dirt and gravel at W Sunrise Dr',
     tag: 'Before',
     tagColor: 'bg-red-600/80',

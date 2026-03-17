@@ -232,13 +232,12 @@ const PARCELS = [
   },
   {
     id: '300-15-007I',
-    label: 'Rick\nTran ★',
+    label: 'Rick\nTran',
     name: 'Rick Tran',
     phone: '480-544-8983',
     propAddress: '2817 W Sunrise Dr',
     city: 'Laveen 85339',
     x: 740, y: ROAD_Y2, w: 100, h: SH, side: 'south',
-    isOrganizer: true,
   },
   {
     id: '300-15-007J',
@@ -331,13 +330,11 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
   function fill(p) {
     const total = pledgeTotal(p, pledges)
     const hov = hoveredId === p.id
-    if (p.isOrganizer) return hov ? '#c2410c' : '#7c2d12'
-    if (total > 0)      return hov ? '#166534' : '#14532d'
+    if (total > 0) return hov ? '#166534' : '#14532d'
     return hov ? '#57534e' : '#3c3836'
   }
   function stroke(p) {
-    if (p.id === selected)  return '#f97316'
-    if (p.isOrganizer)      return '#fb923c'
+    if (p.id === selected) return '#f97316'
     if (pledgeTotal(p, pledges) > 0) return '#22c55e'
     return '#78716c'
   }
@@ -360,9 +357,8 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
         {/* Legend */}
         <div className="flex flex-wrap gap-5 justify-center mb-6 text-sm">
           {[
-            { color: 'bg-green-900 border-green-500',  label: 'Pledged' },
-            { color: 'bg-stone-700 border-stone-500',  label: 'Not yet pledged' },
-            { color: 'bg-orange-900 border-orange-500',label: 'Project organizer' },
+            { color: 'bg-green-900 border-green-500', label: 'Pledged' },
+            { color: 'bg-stone-700 border-stone-500', label: 'Not yet pledged' },
           ].map(({ color, label }) => (
             <div key={label} className="flex items-center gap-2">
               <div className={`w-4 h-4 rounded border ${color}`} />
@@ -469,7 +465,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                         y={pcy - ((lines.length - 1) * lineH) / 2 + i * lineH}
                         textAnchor="middle" dominantBaseline="middle"
                         fontSize={fs}
-                        fill={total > 0 || p.isOrganizer ? '#bbf7d0' : '#d6d3d1'}
+                        fill={total > 0 ? '#bbf7d0' : '#d6d3d1'}
                         fontWeight="600"
                       >{line}</text>
                     ))}
@@ -502,15 +498,10 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
           {sel ? (
             <div className="w-80 flex-shrink-0 bg-stone-800 rounded-xl border border-stone-700 shadow-xl overflow-hidden">
               {/* Header bar */}
-              <div className={`px-5 py-3 flex items-start justify-between ${sel.isOrganizer ? 'bg-orange-900/40 border-b border-orange-800' : 'bg-stone-750 border-b border-stone-700'}`}>
+              <div className="px-5 py-3 flex items-start justify-between bg-stone-750 border-b border-stone-700">
                 <div>
                   <p className="text-stone-400 text-xs font-mono leading-none mb-1">{sel.id}</p>
-                  <h3 className="text-white font-bold text-sm leading-snug">
-                    {sel.name}
-                    {sel.isOrganizer && (
-                      <span className="ml-2 text-orange-400 text-xs font-normal">★ Organizer</span>
-                    )}
-                  </h3>
+                  <h3 className="text-white font-bold text-sm leading-snug">{sel.name}</h3>
                 </div>
                 <button
                   onClick={() => setSelected(null)}
