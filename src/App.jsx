@@ -48,8 +48,13 @@ export default function App() {
   }
 
   function handleNewPledge(pledge) {
-    // Optimistically add to list (real-time subscription will also fire)
-    setPledges(prev => [{ ...pledge, id: Date.now(), created_at: new Date().toISOString() }, ...prev])
+    // Replace any existing pledge for this house_number, then prepend the new one
+    setPledges(prev => {
+      const filtered = pledge.house_number
+        ? prev.filter(p => String(p.house_number) !== String(pledge.house_number))
+        : prev
+      return [{ ...pledge, id: pledge.id ?? Date.now(), created_at: pledge.created_at ?? new Date().toISOString() }, ...filtered]
+    })
   }
 
   return (

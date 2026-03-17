@@ -23,6 +23,13 @@ export async function insertPledge({ name, house_number, amount, message }) {
   return supabase.from('pledges').insert([{ name, house_number, amount, message }]).select()
 }
 
+// Replace any existing pledge(s) for this house_number with a single new one
+export async function upsertPledge({ name, house_number, amount, message }) {
+  if (!supabase) return { error: { message: 'Supabase not configured' } }
+  await supabase.from('pledges').delete().eq('house_number', house_number)
+  return supabase.from('pledges').insert([{ name, house_number, amount, message }]).select()
+}
+
 // ── Community messages ───────────────────────────────────────────────────────
 
 export async function fetchMessages() {

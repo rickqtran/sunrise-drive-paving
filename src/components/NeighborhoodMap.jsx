@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { fetchPledges, insertPledge } from '../lib/supabase'
+import { upsertPledge } from '../lib/supabase'
 import { FiX, FiPhone, FiMail, FiMapPin, FiDollarSign, FiCheckCircle, FiInfo } from 'react-icons/fi'
 
 // ── SVG coordinate constants ──────────────────────────────────────────────────
@@ -300,19 +300,27 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
   const [form, setForm]             = useState({ name: '', amount: '', message: '' })
   const [formState, setFormState]   = useState('idle') // idle | submitting | success | error
 
-  // Reset form state when switching parcels
-  useEffect(() => { setFormState('idle'); setForm({ name: '', amount: '', message: '' }) }, [selected])
-
   const sel = PARCELS.find(p => p.id === selected)
   const selPledges = sel ? pledgesForParcel(sel, pledges) : []
   const selTotal   = selPledges.reduce((s, p) => s + (p.amount || 0), 0)
+  const existingPledge = selPledges[0] ?? null
+
+  // When switching parcels, reset state and pre-fill from existing pledge if present
+  useEffect(() => {
+    setFormState('idle')
+    setForm({
+      name:    existingPledge?.name    ?? '',
+      amount:  existingPledge?.amount  ? String(existingPledge.amount) : '',
+      message: existingPledge?.message ?? '',
+    })
+  }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handlePledge(e) {
     e.preventDefault()
     if (!sel || !form.name || !form.amount) return
     setFormState('submitting')
     const houseNum = (sel.propAddress || '').match(/^(\d+)/)?.[1] || ''
-    const { data, error } = await insertPledge({
+    const { data, error } = await upsertPledge({
       name: form.name,
       house_number: houseNum,
       amount: parseFloat(form.amount),
@@ -322,7 +330,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
       setFormState('error')
     } else {
       setFormState('success')
-      onNewPledge?.(data[0])
+      onNewPledge?.({ ...data[0], house_number: houseNum })
     }
   }
 
@@ -579,12 +587,14 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                 {!sel.emptyLot && (formState === 'success' ? (
                   <div className="bg-green-900/40 border border-green-700 rounded-lg p-3 text-center">
                     <FiCheckCircle size={18} className="text-green-400 mx-auto mb-1" />
-                    <p className="text-green-300 text-sm font-semibold">Pledge recorded! Thank you.</p>
+                    <p className="text-green-300 text-sm font-semibold">
+                      {existingPledge ? 'Pledge updated!' : 'Pledge recorded! Thank you.'}
+                    </p>
                   </div>
                 ) : (
                   <form onSubmit={handlePledge} className="space-y-2">
                     <p className="text-stone-500 text-xs uppercase tracking-wide font-semibold">
-                      {selPledges.length > 0 ? 'Add Another Pledge' : 'Record a Pledge'}
+                      {existingPledge ? 'Edit Pledge' : 'Record a Pledge'}
                     </p>
                     <input
                       type="text"
@@ -598,8 +608,8 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">$</span>
                       <input
                         type="number"
-                        placeholder="Amount (e.g. 3200)"
-                        min={100} max={20000}
+                        placeholder="Amount (e.g. 10000)"
+                        min={100} max={200000}
                         value={form.amount}
                         onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
                         className="w-full bg-stone-900 border border-stone-600 rounded-lg pl-7 pr-3 py-2 text-white text-sm placeholder:text-stone-500 focus:outline-none focus:border-sunrise-500"
@@ -618,7 +628,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                       disabled={formState === 'submitting'}
                       className="w-full bg-sunrise-500 hover:bg-sunrise-600 disabled:opacity-50 text-white font-semibold py-2 rounded-lg text-sm transition-colors"
                     >
-                      {formState === 'submitting' ? 'Saving…' : 'Record Pledge'}
+                      {formState === 'submitting' ? 'Saving…' : existingPledge ? 'Update Pledge' : 'Record Pledge'}
                     </button>
                     {formState === 'error' && (
                       <p className="text-red-400 text-xs text-center">Error saving — please try again.</p>
