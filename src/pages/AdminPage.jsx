@@ -271,13 +271,19 @@ function Moderation({ messages, setMessages }) {
 }
 
 // ── Finances ──────────────────────────────────────────────────────────────────
+// Strip [Tier] prefix from stored message for display
+function stripTier(msg) {
+  return (msg || '').replace(/^\[.*?\]\s*/, '').trim()
+}
+
 function Finances({ pledges, setPledges, goal, setGoal }) {
-  const [editingId, setEditingId]   = useState(null)
-  const [editForm, setEditForm]     = useState({ name: '', amount: '', message: '' })
-  const [savingId, setSavingId]     = useState(null)
-  const [goalInput, setGoalInput]   = useState(String(goal))
-  const [savingGoal, setSavingGoal] = useState(false)
-  const [toast, setToast]           = useState(null)
+  const [editingId, setEditingId]       = useState(null)
+  const [editForm, setEditForm]         = useState({ name: '', amount: '', message: '' })
+  const [savingId, setSavingId]         = useState(null)
+  const [confirmingId, setConfirmingId] = useState(null)
+  const [goalInput, setGoalInput]       = useState(String(goal))
+  const [savingGoal, setSavingGoal]     = useState(false)
+  const [toast, setToast]               = useState(null)
 
   function showToast(type, text) {
     setToast({ type, text })
@@ -307,7 +313,7 @@ function Finances({ pledges, setPledges, goal, setGoal }) {
   }
 
   async function handleDeletePledge(id) {
-    if (!confirm('Remove this pledge permanently?')) return
+    setConfirmingId(null)
     const { error } = await deletePledgeById(id)
     if (error) {
       showToast('error', 'Delete failed — check Supabase RLS policies.')
@@ -426,6 +432,25 @@ function Finances({ pledges, setPledges, goal, setGoal }) {
                         </button>
                       </div>
                     </div>
+                  ) : confirmingId === p.id ? (
+                    /* Inline delete confirmation */
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-stone-300 text-sm">Remove <strong>{p.name}</strong>'s pledge permanently?</span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleDeletePledge(p.id)}
+                          className="flex items-center gap-1 bg-red-700 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+                        >
+                          <FiTrash2 size={12}/> Yes, Remove
+                        </button>
+                        <button
+                          onClick={() => setConfirmingId(null)}
+                          className="flex items-center gap-1 bg-stone-700 hover:bg-stone-600 text-stone-300 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                        >
+                          <FiX size={12}/> Cancel
+                        </button>
+                      </div>
+                    </div>
                   ) : (
                     /* Display row */
                     <div className="flex items-center justify-between gap-4">
@@ -434,14 +459,16 @@ function Finances({ pledges, setPledges, goal, setGoal }) {
                           <span className="text-stone-200 font-medium text-sm truncate">{p.name}</span>
                           <span className="text-stone-500 text-xs flex-shrink-0">#{p.house_number}</span>
                         </div>
-                        {p.message && <p className="text-stone-500 text-xs truncate mt-0.5">{p.message}</p>}
+                        {stripTier(p.message) && (
+                          <p className="text-stone-500 text-xs truncate mt-0.5">"{stripTier(p.message)}"</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <span className="text-sunrise-400 font-bold text-sm">{formatCurrency(p.amount)}</span>
                         <button onClick={() => startEdit(p)} className="text-stone-400 hover:text-white text-xs flex items-center gap-1">
                           <FiEdit2 size={12}/> Edit
                         </button>
-                        <button onClick={() => handleDeletePledge(p.id)} className="text-red-500 hover:text-red-400 text-xs flex items-center gap-1">
+                        <button onClick={() => setConfirmingId(p.id)} className="text-red-500 hover:text-red-400 text-xs flex items-center gap-1">
                           <FiTrash2 size={12}/> Remove
                         </button>
                       </div>

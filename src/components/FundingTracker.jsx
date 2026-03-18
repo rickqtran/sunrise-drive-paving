@@ -14,6 +14,16 @@ function getInitials(name) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
+// Strip [Tier Label] prefix from pledge message
+function stripTier(msg) {
+  return (msg || '').replace(/^\[.*?\]\s*/, '').trim()
+}
+
+// Normalize house_number to leading digits only ("2817 W Sunrise Dr" → "2817")
+function normalizeHouseNum(n) {
+  return String(n ?? '').match(/^\d+/)?.[0] || String(n ?? '')
+}
+
 function formatCurrency(n) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 }
@@ -22,7 +32,7 @@ export default function FundingTracker({ pledges, goal: goalProp }) {
   const goal = goalProp ?? GOAL
   const totalPledged = useMemo(() => pledges.reduce((sum, p) => sum + Number(p.amount), 0), [pledges])
   const percentFunded = Math.min(100, Math.round((totalPledged / goal) * 100))
-  const householdsIn = useMemo(() => new Set(pledges.map(p => p.house_number).filter(Boolean)).size, [pledges])
+  const householdsIn = useMemo(() => new Set(pledges.map(p => normalizeHouseNum(p.house_number)).filter(Boolean)).size, [pledges])
   const remaining = Math.max(0, goal - totalPledged)
 
   const statsCards = [
@@ -86,7 +96,7 @@ export default function FundingTracker({ pledges, goal: goalProp }) {
           </div>
           <div className="flex justify-between mt-2 text-sm text-stone-400">
             <span>$0</span>
-            <span>{formatCurrency(GOAL)}</span>
+            <span>{formatCurrency(goal)}</span>
           </div>
         </div>
 
@@ -142,8 +152,8 @@ export default function FundingTracker({ pledges, goal: goalProp }) {
                     {pledge.house_number && (
                       <div className="text-xs text-stone-400">House #{pledge.house_number}</div>
                     )}
-                    {pledge.message && (
-                      <p className="text-sm text-stone-500 mt-1 italic line-clamp-2">"{pledge.message}"</p>
+                    {stripTier(pledge.message) && (
+                      <p className="text-sm text-stone-500 mt-1 italic line-clamp-2">"{stripTier(pledge.message)}"</p>
                     )}
                   </div>
                 </div>

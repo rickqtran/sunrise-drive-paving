@@ -711,7 +711,11 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                             <Icon size={13} />
                             <span>{ts.label}</span>
                             <span className="text-xs font-normal opacity-70">
-                              {t.amount ? `$${(t.amount / 1000).toFixed(0)}K` : 'Custom'}
+                              {t.amount
+                                ? (t.amount % 1000 === 0
+                                    ? `$${t.amount / 1000}K`
+                                    : `$${(t.amount / 1000).toFixed(1)}K`)
+                                : 'Custom'}
                             </span>
                           </button>
                         )

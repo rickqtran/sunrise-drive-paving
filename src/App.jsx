@@ -12,6 +12,11 @@ import { fetchPledges, subscribeToPledges, fetchSetting } from './lib/supabase'
 
 const DEFAULT_GOAL = 200000
 
+// Normalize house_number to leading digits ("2817 W Sunrise Dr" → "2817")
+function normalizeHouseNum(n) {
+  return String(n ?? '').match(/^\d+/)?.[0] || String(n ?? '')
+}
+
 // Demo pledges shown when Supabase is not yet configured
 const DEMO_PLEDGES = [
   { id: 1, name: 'Rick (Organizer)', house_number: '2817', amount: 3200, message: "Let's get this done!", created_at: new Date().toISOString() },
@@ -27,12 +32,13 @@ export default function App() {
     loadPledges()
     fetchSetting('project_goal').then(({ data }) => { if (data) setGoal(Number(data)) })
 
-    // Subscribe to real-time new pledges — replace by house_number to avoid duplicates
+    // Subscribe to real-time new pledges — replace by normalized house_number to avoid duplicates
     const channel = subscribeToPledges(payload => {
       if (payload.new) {
         setPledges(prev => {
-          const filtered = payload.new.house_number
-            ? prev.filter(p => String(p.house_number) !== String(payload.new.house_number))
+          const incomingKey = normalizeHouseNum(payload.new.house_number)
+          const filtered = incomingKey
+            ? prev.filter(p => normalizeHouseNum(p.house_number) !== incomingKey)
             : prev
           return [payload.new, ...filtered]
         })
@@ -51,11 +57,12 @@ export default function App() {
     } else if (data.length === 0) {
       setPledges([])
     } else {
-      // Deduplicate by house_number — data is ordered newest-first, so first
-      // occurrence of each house_number is the most recent pledge
+      // Deduplicate by normalized house_number — data is ordered newest-first,
+      // so first occurrence of each number is kept. Normalization ensures
+      // "2817" and "2817 W Sunrise Dr" are treated as the same household.
       const seen = new Set()
       const deduped = data.filter(p => {
-        const key = String(p.house_number ?? '')
+        const key = normalizeHouseNum(p.house_number)
         if (!key || seen.has(key)) return false
         seen.add(key)
         return true
@@ -65,10 +72,11 @@ export default function App() {
   }
 
   function handleNewPledge(pledge) {
-    // Replace any existing pledge for this house_number, then prepend the new one
+    // Replace any existing pledge for this normalized house_number, then prepend the new one
     setPledges(prev => {
-      const filtered = pledge.house_number
-        ? prev.filter(p => String(p.house_number) !== String(pledge.house_number))
+      const incomingKey = normalizeHouseNum(pledge.house_number)
+      const filtered = incomingKey
+        ? prev.filter(p => normalizeHouseNum(p.house_number) !== incomingKey)
         : prev
       return [{ ...pledge, id: pledge.id ?? Date.now(), created_at: pledge.created_at ?? new Date().toISOString() }, ...filtered]
     })
