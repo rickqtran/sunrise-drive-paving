@@ -48,7 +48,16 @@ export default function App() {
     } else if (data.length === 0) {
       setPledges([])
     } else {
-      setPledges(data)
+      // Deduplicate by house_number — data is ordered newest-first, so first
+      // occurrence of each house_number is the most recent pledge
+      const seen = new Set()
+      const deduped = data.filter(p => {
+        const key = String(p.house_number ?? '')
+        if (!key || seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      setPledges(deduped)
     }
   }
 

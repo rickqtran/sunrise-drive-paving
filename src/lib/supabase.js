@@ -23,10 +23,13 @@ export async function insertPledge({ name, house_number, amount, message }) {
   return supabase.from('pledges').insert([{ name, house_number, amount, message }]).select()
 }
 
-// Replace any existing pledge(s) for this house_number with a single new one
+// Replace any existing pledge(s) for this house_number with a single new one.
+// Tries both string and numeric forms of house_number to handle column type differences.
 export async function upsertPledge({ name, house_number, amount, message }) {
   if (!supabase) return { error: { message: 'Supabase not configured' } }
-  await supabase.from('pledges').delete().eq('house_number', house_number)
+  // Attempt delete as string and as number to cover either column type
+  await supabase.from('pledges').delete().eq('house_number', String(house_number))
+  await supabase.from('pledges').delete().eq('house_number', Number(house_number))
   return supabase.from('pledges').insert([{ name, house_number, amount, message }]).select()
 }
 
