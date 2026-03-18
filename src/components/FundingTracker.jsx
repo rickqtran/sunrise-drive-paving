@@ -18,18 +18,19 @@ function formatCurrency(n) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 }
 
-export default function FundingTracker({ pledges }) {
+export default function FundingTracker({ pledges, goal: goalProp }) {
+  const goal = goalProp ?? GOAL
   const totalPledged = useMemo(() => pledges.reduce((sum, p) => sum + Number(p.amount), 0), [pledges])
-  const percentFunded = Math.min(100, Math.round((totalPledged / GOAL) * 100))
+  const percentFunded = Math.min(100, Math.round((totalPledged / goal) * 100))
   const householdsIn = useMemo(() => new Set(pledges.map(p => p.house_number).filter(Boolean)).size, [pledges])
-  const remaining = Math.max(0, GOAL - totalPledged)
+  const remaining = Math.max(0, goal - totalPledged)
 
   const statsCards = [
     {
       icon: <FiDollarSign className="text-sunrise-500" size={22} />,
       label: 'Total Pledged',
       value: formatCurrency(totalPledged),
-      sub: `of ${formatCurrency(GOAL)} goal`,
+      sub: `of ${formatCurrency(goal)} goal`,
       bg: 'bg-sunrise-50 border-sunrise-100',
     },
     {
@@ -49,8 +50,8 @@ export default function FundingTracker({ pledges }) {
     {
       icon: <FiTrendingUp className="text-violet-500" size={22} />,
       label: 'Avg Target Pledge per Household',
-      value: formatCurrency(GOAL / TOTAL_HOUSES),
-      sub: `based on ${formatCurrency(GOAL)} goal ÷ ${TOTAL_HOUSES} households`,
+      value: formatCurrency(goal / TOTAL_HOUSES),
+      sub: `based on ${formatCurrency(goal)} goal ÷ ${TOTAL_HOUSES} households`,
       bg: 'bg-violet-50 border-violet-100',
     },
   ]

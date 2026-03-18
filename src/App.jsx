@@ -9,7 +9,9 @@ import TieredPledge from './components/TieredPledge'
 import FAQ from './components/FAQ'
 import CommunityBoard from './components/CommunityBoard'
 import Footer from './components/Footer'
-import { fetchPledges, subscribeToPledges } from './lib/supabase'
+import { fetchPledges, subscribeToPledges, fetchSetting } from './lib/supabase'
+
+const DEFAULT_GOAL = 200000
 
 // Demo pledges shown when Supabase is not yet configured
 const DEMO_PLEDGES = [
@@ -20,9 +22,11 @@ const DEMO_PLEDGES = [
 export default function App() {
   const [pledges, setPledges] = useState([])
   const [loading, setLoading] = useState(true)
+  const [goal, setGoal]       = useState(DEFAULT_GOAL)
 
   useEffect(() => {
     loadPledges()
+    fetchSetting('project_goal').then(({ data }) => { if (data) setGoal(Number(data)) })
 
     // Subscribe to real-time new pledges — replace by house_number to avoid duplicates
     const channel = subscribeToPledges(payload => {
@@ -78,7 +82,7 @@ export default function App() {
         <Hero />
         <PhotoGallery />
         <WhyPave />
-        <FundingTracker pledges={pledges} loading={loading} />
+        <FundingTracker pledges={pledges} loading={loading} goal={goal} />
         <NeighborhoodMap pledges={pledges} onNewPledge={handleNewPledge} />
         <TieredPledge onNewPledge={handleNewPledge} />
         <FAQ />

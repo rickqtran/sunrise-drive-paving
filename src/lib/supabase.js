@@ -49,6 +49,45 @@ export async function insertMessage({ author_name, content }) {
   return supabase.from('messages').insert([{ author_name, content }]).select()
 }
 
+// ── Admin: message deletion ───────────────────────────────────────────────────
+
+export async function deleteMessage(id) {
+  if (!supabase) return { error: { message: 'Supabase not configured' } }
+  return supabase.from('messages').delete().eq('id', id)
+}
+
+// ── Admin: pledge editing ─────────────────────────────────────────────────────
+
+export async function updatePledgeById(id, { name, amount, message }) {
+  if (!supabase) return { error: { message: 'Supabase not configured' } }
+  return supabase.from('pledges').update({ name, amount, message }).eq('id', id).select()
+}
+
+export async function deletePledgeById(id) {
+  if (!supabase) return { error: { message: 'Supabase not configured' } }
+  return supabase.from('pledges').delete().eq('id', id)
+}
+
+// ── Admin: project settings (requires `settings` table: id, key text unique, value text) ──
+
+export async function fetchSetting(key) {
+  if (!supabase) return { data: null, error: null }
+  const { data, error } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', key)
+    .maybeSingle()
+  return { data: data?.value ?? null, error }
+}
+
+export async function upsertSetting(key, value) {
+  if (!supabase) return { error: { message: 'Supabase not configured' } }
+  return supabase
+    .from('settings')
+    .upsert({ key, value: String(value) }, { onConflict: 'key' })
+    .select()
+}
+
 // ── Real-time subscriptions ──────────────────────────────────────────────────
 
 export function subscribeToPledges(callback) {
