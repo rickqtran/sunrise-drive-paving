@@ -5,7 +5,6 @@ import PhotoGallery from './components/PhotoGallery'
 import WhyPave from './components/WhyPave'
 import FundingTracker from './components/FundingTracker'
 import NeighborhoodMap from './components/NeighborhoodMap'
-import TieredPledge from './components/TieredPledge'
 import FAQ from './components/FAQ'
 import CommunityBoard from './components/CommunityBoard'
 import Footer from './components/Footer'
@@ -84,7 +83,6 @@ export default function App() {
         <WhyPave />
         <FundingTracker pledges={pledges} loading={loading} goal={goal} />
         <NeighborhoodMap pledges={pledges} onNewPledge={handleNewPledge} />
-        <TieredPledge onNewPledge={handleNewPledge} />
         <FAQ />
         <CommunityBoard />
       </main>

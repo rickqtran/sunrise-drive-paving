@@ -79,7 +79,7 @@ export default function WhyPave() {
             </p>
           </div>
           <a
-            href="#pledge-form"
+            href="#map"
             className="flex-shrink-0 inline-flex items-center gap-2 bg-sunrise-500 hover:bg-sunrise-600 transition-colors text-white font-semibold px-6 py-3 rounded-xl text-sm min-h-[44px]"
           >
             Pledge as a Sponsor <FiArrowRight size={16} />

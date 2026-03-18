@@ -1,6 +1,33 @@
 import { useState, useEffect } from 'react'
 import { upsertPledge } from '../lib/supabase'
-import { FiX, FiPhone, FiMail, FiMapPin, FiDollarSign, FiCheckCircle, FiInfo } from 'react-icons/fi'
+import { FiX, FiPhone, FiMail, FiMapPin, FiDollarSign, FiCheckCircle, FiInfo, FiHome, FiStar, FiHeart } from 'react-icons/fi'
+
+// ── Pledge tiers ───────────────────────────────────────────────────────────────
+const GOAL        = 200000
+const HOUSEHOLDS  = 20
+const BASE_AMOUNT = GOAL / HOUSEHOLDS  // $10,000
+
+const TIERS = [
+  { id: 'basic',     label: 'Basic',     full: 'Basic Participation',    amount: BASE_AMOUNT,              icon: FiHome  },
+  { id: 'supporter', label: 'Supporter', full: 'Community Supporter',    amount: Math.round(BASE_AMOUNT * 1.15), icon: FiStar  },
+  { id: 'sponsor',   label: 'Sponsor',   full: 'Community Sponsor',      amount: null,                     icon: FiHeart },
+]
+const MIN_SPONSOR = Math.round(BASE_AMOUNT * 1.25)
+
+// Parse tier from a pledge's message field
+function parseTier(pledge) {
+  const msg = pledge?.message || ''
+  if (msg.includes('Community Sponsor'))   return 'sponsor'
+  if (msg.includes('Community Supporter')) return 'supporter'
+  return 'basic'
+}
+
+// ── Tier colour palette (dark-theme) ─────────────────────────────────────────
+const TIER_STYLE = {
+  basic:     { fill: '#3b1a05', fillHov: '#5c2d0e', stroke: '#cd7f32', text: '#e8a87c', dot: '#cd7f32', label: 'Bronze' },
+  supporter: { fill: '#1e2535', fillHov: '#2d3a50', stroke: '#a8a9ad', text: '#d1d5db', dot: '#a8a9ad', label: 'Silver' },
+  sponsor:   { fill: '#2d1e00', fillHov: '#4a3200', stroke: '#ffd700', text: '#fbbf24', dot: '#ffd700', label: 'Gold'   },
+}
 
 // ── SVG coordinate constants ──────────────────────────────────────────────────
 const VB_W   = 1220
@@ -295,36 +322,51 @@ function pledgeTotal(parcel, pledges) {
 }
 
 export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
-  const [selected, setSelected]     = useState(null)
-  const [hoveredId, setHoveredId]   = useState(null)
-  const [form, setForm]             = useState({ name: '', amount: '', message: '' })
-  const [formState, setFormState]   = useState('idle') // idle | submitting | success | error
+  const [selected, setSelected]         = useState(null)
+  const [hoveredId, setHoveredId]       = useState(null)
+  const [tier, setTier]                 = useState('basic')
+  const [customAmount, setCustomAmount] = useState('')
+  const [form, setForm]                 = useState({ name: '', message: '' })
+  const [formState, setFormState]       = useState('idle') // idle | submitting | success | error
 
-  const sel = PARCELS.find(p => p.id === selected)
-  const selPledges = sel ? pledgesForParcel(sel, pledges) : []
-  const selTotal   = selPledges.reduce((s, p) => s + (p.amount || 0), 0)
+  const sel          = PARCELS.find(p => p.id === selected)
+  const selPledges   = sel ? pledgesForParcel(sel, pledges) : []
+  const selTotal     = selPledges.reduce((s, p) => s + (p.amount || 0), 0)
   const existingPledge = selPledges[0] ?? null
 
-  // When switching parcels, reset state and pre-fill from existing pledge if present
+  // Derived pledge amount from tier selection
+  const selectedTier  = TIERS.find(t => t.id === tier)
+  const pledgeAmount  = tier === 'sponsor'
+    ? (parseFloat(customAmount) || 0)
+    : selectedTier.amount
+
+  // When switching parcels, reset and pre-fill from existing pledge
   useEffect(() => {
     setFormState('idle')
+    const ep = sel ? (pledgesForParcel(sel, pledges)[0] ?? null) : null
+    const existingTier = ep ? parseTier(ep) : 'basic'
+    setTier(existingTier)
+    setCustomAmount(ep && existingTier === 'sponsor' ? String(ep.amount) : '')
     setForm({
-      name:    existingPledge?.name    ?? '',
-      amount:  existingPledge?.amount  ? String(existingPledge.amount) : '',
-      message: existingPledge?.message ?? '',
+      name:    ep?.name    ?? '',
+      message: ep?.message ? ep.message.replace(/^\[.*?\]\s*/, '') : '',
     })
   }, [selected]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handlePledge(e) {
     e.preventDefault()
-    if (!sel || !form.name || !form.amount) return
+    if (!sel || !form.name || pledgeAmount < 100) return
     setFormState('submitting')
     const houseNum = (sel.propAddress || '').match(/^(\d+)/)?.[1] || ''
+    // Encode tier into the message so it can be parsed later for colouring
+    const tierLabel = TIERS.find(t => t.id === tier)?.full ?? ''
+    const msgBody   = form.message.trim()
+    const fullMsg   = msgBody ? `[${tierLabel}] ${msgBody}` : `[${tierLabel}]`
     const { data, error } = await upsertPledge({
       name: form.name,
       house_number: houseNum,
-      amount: parseFloat(form.amount),
-      message: form.message || null,
+      amount: pledgeAmount,
+      message: fullMsg,
     })
     if (error || !data) {
       setFormState('error')
@@ -334,16 +376,22 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
     }
   }
 
-  // Parcel visual styling
+  // ── Parcel visual styling based on tier ────────────────────────────────────
+  function getParcelTierStyle(p) {
+    const pledge = pledgesForParcel(p, pledges)[0]
+    if (!pledge) return null
+    return TIER_STYLE[parseTier(pledge)]
+  }
   function fill(p) {
-    const total = pledgeTotal(p, pledges)
     const hov = hoveredId === p.id
-    if (total > 0) return hov ? '#166534' : '#14532d'
+    const ts  = getParcelTierStyle(p)
+    if (ts) return hov ? ts.fillHov : ts.fill
     return hov ? '#57534e' : '#3c3836'
   }
   function stroke(p) {
     if (p.id === selected) return '#f97316'
-    if (pledgeTotal(p, pledges) > 0) return '#22c55e'
+    const ts = getParcelTierStyle(p)
+    if (ts) return ts.stroke
     return '#78716c'
   }
   function strokeW(p) { return p.id === selected ? 2.5 : 1 }
@@ -363,16 +411,29 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-5 justify-center mb-6 text-sm">
-          {[
-            { color: 'bg-green-900 border-green-500', label: 'Pledged' },
-            { color: 'bg-stone-700 border-stone-500', label: 'Not yet pledged' },
-          ].map(({ color, label }) => (
-            <div key={label} className="flex items-center gap-2">
-              <div className={`w-4 h-4 rounded border ${color}`} />
-              <span className="text-stone-300">{label}</span>
+        <div className="flex flex-wrap gap-4 justify-center mb-6 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded border" style={{ background: '#3b1a05', borderColor: '#cd7f32' }} />
+            <span className="text-stone-300">Bronze <span className="text-stone-500">(Basic)</span></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded border" style={{ background: '#1e2535', borderColor: '#a8a9ad' }} />
+            <span className="text-stone-300">Silver <span className="text-stone-500">(Supporter)</span></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded border" style={{ background: '#2d1e00', borderColor: '#ffd700' }} />
+            <span className="text-stone-300">Gold <span className="text-stone-500">(Sponsor)</span></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded border bg-stone-700 border-stone-500" />
+            <span className="text-stone-300">Not yet pledged</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded border bg-stone-900 border-stone-600 flex items-center justify-center">
+              <span className="text-stone-500 text-xs leading-none">–</span>
             </div>
-          ))}
+            <span className="text-stone-300">Vacant lot</span>
+          </div>
         </div>
 
         {/* Map + Detail panel layout */}
@@ -438,6 +499,8 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                 const fs      = p.w < 80 ? 8 : p.w < 95 ? 9 : 9.5
                 const lineH   = fs + 2
 
+                const ts = getParcelTierStyle(p)
+
                 return (
                   <g
                     key={p.id}
@@ -454,9 +517,9 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                       strokeWidth={strokeW(p)}
                     />
 
-                    {/* Pledge dot (top-right) */}
-                    {total > 0 && (
-                      <circle cx={p.x + p.w - 7} cy={p.y + 7} r={4} fill="#22c55e" />
+                    {/* Pledge dot (top-right) — tier color */}
+                    {total > 0 && ts && (
+                      <circle cx={p.x + p.w - 7} cy={p.y + 7} r={4} fill={ts.dot} />
                     )}
 
                     {/* Parcel ID (tiny, top center) */}
@@ -465,7 +528,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                       textAnchor="middle" fontSize="6.5" fill="#78716c"
                     >{p.id}</text>
 
-                    {/* Resident name label (centered) */}
+                    {/* Resident name label (centered) — tier color when pledged */}
                     {lines.map((line, i) => (
                       <text
                         key={i}
@@ -473,7 +536,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                         y={pcy - ((lines.length - 1) * lineH) / 2 + i * lineH}
                         textAnchor="middle" dominantBaseline="middle"
                         fontSize={fs}
-                        fill={total > 0 ? '#bbf7d0' : '#d6d3d1'}
+                        fill={ts ? ts.text : '#d6d3d1'}
                         fontWeight="600"
                       >{line}</text>
                     ))}
@@ -488,7 +551,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                       <text
                         x={pcx} y={p.y + p.h - 8}
                         textAnchor="middle" fontSize="7.5"
-                        fill={total > 0 ? '#86efac' : '#a8a29e'}
+                        fill={ts ? ts.dot : '#a8a29e'}
                         fontWeight={total > 0 ? '700' : '400'}
                       >Pledged: ${total.toLocaleString()}</text>
                     )}
@@ -554,48 +617,132 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                 </div>
 
                 {/* Pledge status */}
-                <div>
-                  <p className="text-stone-500 text-xs uppercase tracking-wide font-semibold mb-2">Pledge Status</p>
-                  {sel.emptyLot ? (
-                    <div className="bg-stone-900/60 border border-stone-600 rounded-lg p-3 flex items-center gap-2">
-                      <FiInfo size={13} className="text-stone-500" />
-                      <span className="text-stone-400 text-sm italic">Not Expected (vacant lot)</span>
+                {(() => {
+                  const activePledge = selPledges[0] ?? null
+                  const activeTier   = activePledge ? parseTier(activePledge) : null
+                  const ts           = activeTier ? TIER_STYLE[activeTier] : null
+                  const TierIcon     = activeTier ? TIERS.find(t => t.id === activeTier)?.icon : null
+                  const cleanMsg     = activePledge?.message
+                    ? activePledge.message.replace(/^\[.*?\]\s*/, '').trim()
+                    : ''
+                  return (
+                    <div>
+                      <p className="text-stone-500 text-xs uppercase tracking-wide font-semibold mb-2">Pledge Status</p>
+                      {sel.emptyLot ? (
+                        <div className="bg-stone-900/60 border border-stone-600 rounded-lg p-3 flex items-center gap-2">
+                          <FiInfo size={13} className="text-stone-500" />
+                          <span className="text-stone-400 text-sm italic">Not Expected (vacant lot)</span>
+                        </div>
+                      ) : activePledge ? (
+                        <div
+                          className="rounded-lg p-3"
+                          style={{ background: ts?.fill + 'cc', border: `1px solid ${ts?.stroke}` }}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <FiCheckCircle size={13} style={{ color: ts?.dot }} />
+                              <span className="font-semibold text-sm" style={{ color: ts?.dot }}>Pledged</span>
+                            </div>
+                            {TierIcon && ts && (
+                              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                                style={{ background: ts.stroke + '33', border: `1px solid ${ts.stroke}`, color: ts.dot }}>
+                                <TierIcon size={10} />
+                                {ts.label}
+                              </div>
+                            )}
+                          </div>
+                          <p className="font-bold text-2xl" style={{ color: ts?.text }}>
+                            ${selTotal.toLocaleString()}
+                          </p>
+                          <p className="text-xs mt-1 opacity-80" style={{ color: ts?.text }}>
+                            {activePledge.name}
+                            {cleanMsg && <span className="italic"> · "{cleanMsg}"</span>}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-stone-900/60 border border-stone-600 rounded-lg p-3 flex items-center gap-2">
+                          <FiDollarSign size={13} className="text-stone-500" />
+                          <span className="text-stone-400 text-sm">Pledged: $0</span>
+                        </div>
+                      )}
                     </div>
-                  ) : selPledges.length > 0 ? (
-                    <div className="bg-green-900/40 border border-green-700 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <FiCheckCircle size={13} className="text-green-400" />
-                        <span className="text-green-400 font-semibold text-sm">Pledged</span>
-                      </div>
-                      <p className="text-green-300 font-bold text-2xl">${selTotal.toLocaleString()}</p>
-                      {selPledges.map((pl, i) => (
-                        <p key={i} className="text-green-500 text-xs mt-1">
-                          {pl.name} — ${pl.amount?.toLocaleString()}
-                          {pl.message && <span className="italic"> · "{pl.message}"</span>}
-                        </p>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-stone-900/60 border border-stone-600 rounded-lg p-3 flex items-center gap-2">
-                      <FiDollarSign size={13} className="text-stone-500" />
-                      <span className="text-stone-400 text-sm">Pledged: $0</span>
-                    </div>
-                  )}
-                </div>
+                  )
+                })()}
 
                 {/* Pledge form — hidden for vacant lots */}
                 {!sel.emptyLot && (formState === 'success' ? (
-                  <div className="bg-green-900/40 border border-green-700 rounded-lg p-3 text-center">
-                    <FiCheckCircle size={18} className="text-green-400 mx-auto mb-1" />
-                    <p className="text-green-300 text-sm font-semibold">
-                      {existingPledge ? 'Pledge updated!' : 'Pledge recorded! Thank you.'}
-                    </p>
-                  </div>
+                  (() => {
+                    const ts = TIER_STYLE[tier]
+                    return (
+                      <div className="rounded-lg p-3 text-center"
+                        style={{ background: ts.fill + 'cc', border: `1px solid ${ts.stroke}` }}>
+                        <FiCheckCircle size={18} className="mx-auto mb-1" style={{ color: ts.dot }} />
+                        <p className="text-sm font-semibold" style={{ color: ts.text }}>
+                          {existingPledge ? 'Pledge updated!' : 'Pledge recorded! Thank you.'}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: ts.dot }}>
+                          {TIER_STYLE[tier].label} · ${pledgeAmount.toLocaleString()}
+                        </p>
+                      </div>
+                    )
+                  })()
                 ) : (
-                  <form onSubmit={handlePledge} className="space-y-2">
+                  <form onSubmit={handlePledge} className="space-y-3">
                     <p className="text-stone-500 text-xs uppercase tracking-wide font-semibold">
                       {existingPledge ? 'Edit Pledge' : 'Record a Pledge'}
                     </p>
+
+                    {/* Tier selector pills */}
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {TIERS.map(t => {
+                        const ts      = TIER_STYLE[t.id]
+                        const active  = tier === t.id
+                        const Icon    = t.icon
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => setTier(t.id)}
+                            className="flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg text-xs font-semibold transition-all"
+                            style={active
+                              ? { background: ts.fill, border: `2px solid ${ts.stroke}`, color: ts.dot }
+                              : { background: '#1c1917', border: '2px solid #44403c', color: '#a8a29e' }}
+                          >
+                            <Icon size={13} />
+                            <span>{ts.label}</span>
+                            <span className="text-xs font-normal opacity-70">
+                              {t.amount ? `$${(t.amount / 1000).toFixed(0)}K` : 'Custom'}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Sponsor custom amount */}
+                    {tier === 'sponsor' && (
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">$</span>
+                        <input
+                          type="number"
+                          placeholder={`Min $${MIN_SPONSOR.toLocaleString()}`}
+                          min={MIN_SPONSOR}
+                          value={customAmount}
+                          onChange={e => setCustomAmount(e.target.value)}
+                          className="w-full bg-stone-900 border border-stone-600 rounded-lg pl-7 pr-3 py-2 text-white text-sm placeholder:text-stone-500 focus:outline-none"
+                          style={{ borderColor: '#ffd70066' }}
+                          required
+                        />
+                      </div>
+                    )}
+
+                    {/* Display fixed amount for non-sponsor tiers */}
+                    {tier !== 'sponsor' && (
+                      <div className="text-xs rounded-lg px-3 py-2 font-semibold"
+                        style={{ background: TIER_STYLE[tier].fill, color: TIER_STYLE[tier].dot, border: `1px solid ${TIER_STYLE[tier].stroke}55` }}>
+                        Pledge amount: ${TIERS.find(t => t.id === tier)?.amount?.toLocaleString()}
+                      </div>
+                    )}
+
                     <input
                       type="text"
                       placeholder="Your name"
@@ -604,18 +751,6 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                       className="w-full bg-stone-900 border border-stone-600 rounded-lg px-3 py-2 text-white text-sm placeholder:text-stone-500 focus:outline-none focus:border-sunrise-500"
                       required
                     />
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">$</span>
-                      <input
-                        type="number"
-                        placeholder="Amount (e.g. 10000)"
-                        min={100} max={200000}
-                        value={form.amount}
-                        onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                        className="w-full bg-stone-900 border border-stone-600 rounded-lg pl-7 pr-3 py-2 text-white text-sm placeholder:text-stone-500 focus:outline-none focus:border-sunrise-500"
-                        required
-                      />
-                    </div>
                     <input
                       type="text"
                       placeholder="Message (optional)"
@@ -625,8 +760,12 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                     />
                     <button
                       type="submit"
-                      disabled={formState === 'submitting'}
-                      className="w-full bg-sunrise-500 hover:bg-sunrise-600 disabled:opacity-50 text-white font-semibold py-2 rounded-lg text-sm transition-colors"
+                      disabled={formState === 'submitting' || (tier === 'sponsor' && pledgeAmount < MIN_SPONSOR)}
+                      className="w-full font-semibold py-2 rounded-lg text-sm transition-all disabled:opacity-50"
+                      style={{
+                        background: TIER_STYLE[tier].stroke,
+                        color: '#fff',
+                      }}
                     >
                       {formState === 'submitting' ? 'Saving…' : existingPledge ? 'Update Pledge' : 'Record Pledge'}
                     </button>

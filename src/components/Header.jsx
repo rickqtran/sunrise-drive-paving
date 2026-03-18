@@ -7,7 +7,7 @@ const navLinks = [
   { href: '#photos',      label: 'Photos' },
   { href: '#why',         label: 'Why Pave' },
   { href: '#funding',     label: 'Funding' },
-  { href: '#pledge-form', label: 'Pledge' },
+  { href: '#map',         label: 'Pledge' },
   { href: '#faq',         label: 'FAQ' },
   { href: '#community',   label: 'Chat' },
 ]
