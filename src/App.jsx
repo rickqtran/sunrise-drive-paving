@@ -24,10 +24,15 @@ export default function App() {
   useEffect(() => {
     loadPledges()
 
-    // Subscribe to real-time new pledges
+    // Subscribe to real-time new pledges — replace by house_number to avoid duplicates
     const channel = subscribeToPledges(payload => {
       if (payload.new) {
-        setPledges(prev => [payload.new, ...prev])
+        setPledges(prev => {
+          const filtered = payload.new.house_number
+            ? prev.filter(p => String(p.house_number) !== String(payload.new.house_number))
+            : prev
+          return [payload.new, ...filtered]
+        })
       }
     })
 
