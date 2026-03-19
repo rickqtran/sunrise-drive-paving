@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { upsertPledge } from '../lib/supabase'
-import { FiX, FiPhone, FiMail, FiMapPin, FiDollarSign, FiCheckCircle, FiInfo, FiHome, FiStar, FiHeart } from 'react-icons/fi'
+import { upsertPledge, deletePledgeById } from '../lib/supabase'
+import { FiX, FiPhone, FiMail, FiMapPin, FiDollarSign, FiCheckCircle, FiInfo, FiHome, FiStar, FiHeart, FiRefreshCw } from 'react-icons/fi'
 
 // ── Pledge tiers ───────────────────────────────────────────────────────────────
 const GOAL        = 200000
@@ -321,13 +321,24 @@ function pledgeTotal(parcel, pledges) {
   return pledgesForParcel(parcel, pledges).reduce((s, p) => s + (p.amount || 0), 0)
 }
 
-export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
+// Format dollar amounts compactly for SVG labels
+function formatAmountCompact(n) {
+  if (!n) return '$0'
+  if (n >= 1000) {
+    const k = n / 1000
+    return '$' + (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)) + 'K'
+  }
+  return '$' + n.toLocaleString()
+}
+
+export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDeleted }) {
   const [selected, setSelected]         = useState(null)
   const [hoveredId, setHoveredId]       = useState(null)
   const [tier, setTier]                 = useState('basic')
   const [customAmount, setCustomAmount] = useState('')
   const [form, setForm]                 = useState({ name: '', message: '' })
   const [formState, setFormState]       = useState('idle') // idle | submitting | success | error
+  const [resetting, setResetting]       = useState(false)
 
   const sel          = PARCELS.find(p => p.id === selected)
   const selPledges   = sel ? pledgesForParcel(sel, pledges) : []
@@ -373,6 +384,22 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
     } else {
       setFormState('success')
       onNewPledge?.({ ...data[0], house_number: houseNum })
+    }
+  }
+
+  async function handleReset() {
+    if (!existingPledge) return
+    setResetting(true)
+    const { error } = await deletePledgeById(existingPledge.id)
+    setResetting(false)
+    if (error) {
+      setFormState('error')
+    } else {
+      onPledgeDeleted?.(String(existingPledge.house_number))
+      setFormState('idle')
+      setForm({ name: '', message: '' })
+      setTier('basic')
+      setCustomAmount('')
     }
   }
 
@@ -496,8 +523,9 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                 const lines   = p.label.split('\n')
                 const pcx     = cx(p)
                 const pcy     = cy(p)
-                const fs      = p.w < 80 ? 8 : p.w < 95 ? 9 : 9.5
-                const lineH   = fs + 2
+                const nameFs  = p.w < 80 ? 8 : p.w < 95 ? 9 : 9.5
+                const nameH   = nameFs + 2
+                const amtFs   = p.w < 80 ? 14 : p.w < 100 ? 16 : 18
 
                 const ts = getParcelTierStyle(p)
 
@@ -517,44 +545,43 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                       strokeWidth={strokeW(p)}
                     />
 
-                    {/* Pledge dot (top-right) — tier color */}
-                    {total > 0 && ts && (
-                      <circle cx={p.x + p.w - 7} cy={p.y + 7} r={4} fill={ts.dot} />
-                    )}
-
-                    {/* Parcel ID (tiny, top center) */}
+                    {/* Parcel ID — top center */}
                     <text
-                      x={pcx} y={p.y + 9}
-                      textAnchor="middle" fontSize="6.5" fill="#78716c"
+                      x={pcx} y={p.y + 11}
+                      textAnchor="middle" fontSize="7.5" fill="#78716c" fontWeight="500"
                     >{p.id}</text>
 
-                    {/* Resident name label (centered) — tier color when pledged */}
-                    {lines.map((line, i) => (
-                      <text
-                        key={i}
-                        x={pcx}
-                        y={pcy - ((lines.length - 1) * lineH) / 2 + i * lineH}
-                        textAnchor="middle" dominantBaseline="middle"
-                        fontSize={fs}
-                        fill={ts ? ts.text : '#d6d3d1'}
-                        fontWeight="600"
-                      >{line}</text>
-                    ))}
-
-                    {/* Pledge status (bottom center) */}
+                    {/* Pledge amount — large, center of parcel */}
                     {p.emptyLot ? (
                       <text
-                        x={pcx} y={p.y + p.h - 8}
-                        textAnchor="middle" fontSize="7" fill="#78716c" fontStyle="italic"
-                      >Not Expected</text>
+                        x={pcx} y={pcy}
+                        textAnchor="middle" dominantBaseline="middle"
+                        fontSize={amtFs - 2} fill="#44403c" fontStyle="italic"
+                      >Vacant</text>
                     ) : (
                       <text
-                        x={pcx} y={p.y + p.h - 8}
-                        textAnchor="middle" fontSize="7.5"
-                        fill={ts ? ts.dot : '#a8a29e'}
-                        fontWeight={total > 0 ? '700' : '400'}
-                      >Pledged: ${total.toLocaleString()}</text>
+                        x={pcx} y={pcy}
+                        textAnchor="middle" dominantBaseline="middle"
+                        fontSize={amtFs} fontWeight="700"
+                        fill={ts ? ts.dot : '#57534e'}
+                      >{formatAmountCompact(total)}</text>
                     )}
+
+                    {/* Resident name — bottom of parcel */}
+                    {lines.map((line, i) => {
+                      const lineFromBottom = lines.length - 1 - i
+                      return (
+                        <text
+                          key={i}
+                          x={pcx}
+                          y={p.y + p.h - 9 - lineFromBottom * nameH}
+                          textAnchor="middle"
+                          fontSize={nameFs}
+                          fill={ts ? ts.text : '#a8a29e'}
+                          fontWeight="500"
+                        >{line}</text>
+                      )
+                    })}
                   </g>
                 )
               })}
@@ -678,18 +705,26 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                         style={{ background: ts.fill + 'cc', border: `1px solid ${ts.stroke}` }}>
                         <FiCheckCircle size={18} className="mx-auto mb-1" style={{ color: ts.dot }} />
                         <p className="text-sm font-semibold" style={{ color: ts.text }}>
-                          {existingPledge ? 'Pledge updated!' : 'Pledge recorded! Thank you.'}
+                          Pledge saved!
                         </p>
-                        <p className="text-xs mt-0.5" style={{ color: ts.dot }}>
+                        <p className="text-xs mt-0.5 mb-2" style={{ color: ts.dot }}>
                           {TIER_STYLE[tier].label} · ${pledgeAmount.toLocaleString()}
                         </p>
+                        <button
+                          type="button"
+                          onClick={() => setFormState('idle')}
+                          className="text-xs underline opacity-70 hover:opacity-100 transition-opacity"
+                          style={{ color: ts.text }}
+                        >
+                          Edit pledge
+                        </button>
                       </div>
                     )
                   })()
                 ) : (
                   <form onSubmit={handlePledge} className="space-y-3">
                     <p className="text-stone-500 text-xs uppercase tracking-wide font-semibold">
-                      {existingPledge ? 'Edit Pledge' : 'Record a Pledge'}
+                      {existingPledge ? 'Update Pledge' : 'Record a Pledge'}
                     </p>
 
                     {/* Tier selector pills */}
@@ -773,6 +808,20 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge }) {
                     >
                       {formState === 'submitting' ? 'Saving…' : existingPledge ? 'Update Pledge' : 'Record Pledge'}
                     </button>
+
+                    {/* Reset to zero — only shown when a pledge already exists */}
+                    {existingPledge && (
+                      <button
+                        type="button"
+                        onClick={handleReset}
+                        disabled={resetting}
+                        className="w-full flex items-center justify-center gap-1.5 text-xs text-red-500 hover:text-red-400 py-1 transition-colors disabled:opacity-50"
+                      >
+                        <FiRefreshCw size={11} className={resetting ? 'animate-spin' : ''} />
+                        {resetting ? 'Removing pledge…' : 'Reset pledge to $0'}
+                      </button>
+                    )}
+
                     {formState === 'error' && (
                       <p className="text-red-400 text-xs text-center">Error saving — please try again.</p>
                     )}

@@ -82,6 +82,11 @@ export default function App() {
     })
   }
 
+  function handlePledgeDeleted(houseNum) {
+    const normKey = normalizeHouseNum(houseNum)
+    setPledges(prev => prev.filter(p => normalizeHouseNum(p.house_number) !== normKey))
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -90,7 +95,7 @@ export default function App() {
         <PhotoGallery />
         <WhyPave />
         <FundingTracker pledges={pledges} loading={loading} goal={goal} />
-        <NeighborhoodMap pledges={pledges} onNewPledge={handleNewPledge} />
+        <NeighborhoodMap pledges={pledges} onNewPledge={handleNewPledge} onPledgeDeleted={handlePledgeDeleted} />
         <FAQ />
         <CommunityBoard />
       </main>

@@ -4,21 +4,6 @@ import { FiUsers, FiDollarSign, FiTarget, FiTrendingUp } from 'react-icons/fi'
 const GOAL = 200000
 const TOTAL_HOUSES = 20
 
-// Avatar colors for pledge list
-const AVATAR_COLORS = [
-  'bg-sunrise-400', 'bg-earth-400', 'bg-teal-500', 'bg-violet-500',
-  'bg-pink-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500',
-]
-
-function getInitials(name) {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-}
-
-// Strip [Tier Label] prefix from pledge message
-function stripTier(msg) {
-  return (msg || '').replace(/^\[.*?\]\s*/, '').trim()
-}
-
 // Normalize house_number to leading digits only ("2817 W Sunrise Dr" → "2817")
 function normalizeHouseNum(n) {
   return String(n ?? '').match(/^\d+/)?.[0] || String(n ?? '')
@@ -114,53 +99,6 @@ export default function FundingTracker({ pledges, goal: goalProp }) {
           ))}
         </div>
 
-        {/* Pledge list */}
-        <div>
-          <h3 className="text-xl font-bold text-stone-800 mb-4">
-            Neighbors Who've Pledged
-            {pledges.length > 0 && (
-              <span className="ml-2 text-sm font-normal bg-sunrise-100 text-sunrise-700 px-2 py-0.5 rounded-full">
-                {pledges.length} {pledges.length === 1 ? 'pledge' : 'pledges'}
-              </span>
-            )}
-          </h3>
-
-          {pledges.length === 0 ? (
-            <div className="card text-center py-12 text-stone-400">
-              <FiUsers size={40} className="mx-auto mb-3 opacity-30" />
-              <p className="text-lg font-medium">No pledges yet — be the first!</p>
-              <a href="#pledge" className="text-sunrise-500 hover:underline text-sm mt-1 block">
-                Make your pledge →
-              </a>
-            </div>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {pledges.map((pledge, i) => (
-                <div key={pledge.id || i} className="card flex items-start gap-3">
-                  {/* Avatar */}
-                  <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-bold ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}>
-                    {getInitials(pledge.name)}
-                  </div>
-                  {/* Info */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-stone-800 truncate">{pledge.name}</span>
-                      <span className="text-sunrise-600 font-bold text-sm flex-shrink-0">
-                        {formatCurrency(pledge.amount)}
-                      </span>
-                    </div>
-                    {pledge.house_number && (
-                      <div className="text-xs text-stone-400">House #{pledge.house_number}</div>
-                    )}
-                    {stripTier(pledge.message) && (
-                      <p className="text-sm text-stone-500 mt-1 italic line-clamp-2">"{stripTier(pledge.message)}"</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </section>
   )
