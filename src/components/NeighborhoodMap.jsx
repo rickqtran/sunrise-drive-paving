@@ -759,18 +759,28 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
 
                     {/* Sponsor custom amount */}
                     {tier === 'sponsor' && (
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">$</span>
-                        <input
-                          type="number"
-                          placeholder={`Min $${MIN_SPONSOR.toLocaleString()}`}
-                          min={MIN_SPONSOR}
-                          value={customAmount}
-                          onChange={e => setCustomAmount(e.target.value)}
-                          className="w-full bg-stone-900 border border-stone-600 rounded-lg pl-7 pr-3 py-2 text-white text-sm placeholder:text-stone-500 focus:outline-none"
-                          style={{ borderColor: '#ffd70066' }}
-                          required
-                        />
+                      <div>
+                        <p className="text-red-400 text-xs font-semibold mb-1 flex items-center gap-1">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                          Enter your custom pledge amount
+                        </p>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-red-400 font-bold text-sm">$</span>
+                          <input
+                            type="number"
+                            placeholder={`Min $${MIN_SPONSOR.toLocaleString()}`}
+                            min={MIN_SPONSOR}
+                            value={customAmount}
+                            onChange={e => setCustomAmount(e.target.value)}
+                            className="w-full rounded-lg pl-7 pr-3 py-2.5 text-white text-sm font-semibold placeholder:text-red-400/50 focus:outline-none"
+                            style={{
+                              background: '#2d0a0a',
+                              border: '2px solid #ef4444',
+                              boxShadow: '0 0 0 3px rgba(239,68,68,0.2)',
+                            }}
+                            required
+                          />
+                        </div>
                       </div>
                     )}
 
