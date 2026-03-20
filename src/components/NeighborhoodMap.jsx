@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { upsertPledge, deletePledgeById } from '../lib/supabase'
+import { upsertPledge, deletePledgeById, logPledgeTransaction } from '../lib/supabase'
 import { FiX, FiPhone, FiMail, FiMapPin, FiDollarSign, FiCheckCircle, FiInfo, FiHome, FiStar, FiHeart, FiRefreshCw } from 'react-icons/fi'
 
 // ── Pledge tiers ───────────────────────────────────────────────────────────────
@@ -387,6 +387,14 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
       setFormState('error')
     } else {
       setFormState('success')
+      // Log to audit trail (fire-and-forget)
+      logPledgeTransaction({
+        type:         existingPledge ? 'update' : 'pledge',
+        house_number: houseNum,
+        name:         form.name,
+        amount:       pledgeAmount,
+        message:      fullMsg,
+      })
       onNewPledge?.({ ...data[0], house_number: houseNum })
     }
   }
@@ -394,11 +402,19 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
   async function handleReset() {
     if (!existingPledge) return
     setResetting(true)
-    const { error } = await deletePledgeById(existingPledge.id)
+    const { data, error } = await deletePledgeById(existingPledge.id)
     setResetting(false)
-    if (error) {
+    if (error || !data?.length) {
       setFormState('error')
     } else {
+      // Log the deletion
+      logPledgeTransaction({
+        type:         'delete',
+        house_number: String(existingPledge.house_number),
+        name:         existingPledge.name,
+        amount:       existingPledge.amount,
+        message:      existingPledge.message,
+      })
       onPledgeDeleted?.(String(existingPledge.house_number))
       setFormState('idle')
       setForm({ name: '', message: '' })

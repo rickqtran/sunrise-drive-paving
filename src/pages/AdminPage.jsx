@@ -10,6 +10,7 @@ import {
   fetchPledges, fetchMessages,
   deleteMessage, updatePledgeById, deletePledgeById,
   fetchSetting, upsertSetting,
+  logPledgeTransaction, fetchPledgeLogs,
 } from '../lib/supabase'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -309,16 +310,36 @@ function Finances({ pledges, setPledges, goal, setGoal }) {
     } else {
       setPledges(prev => prev.map(p => p.id === id ? { ...p, ...data[0] } : p))
       setEditingId(null)
+      logPledgeTransaction({
+        type: 'update',
+        house_number: String(data[0].house_number),
+        name: data[0].name,
+        amount: data[0].amount,
+        message: data[0].message,
+      })
       showToast('success', 'Pledge updated.')
     }
   }
 
   async function handleDeletePledge(id) {
     setConfirmingId(null)
-    const { error } = await deletePledgeById(id)
-    if (error) {
-      showToast('error', 'Delete failed — check Supabase RLS policies.')
+    const pledgeToDelete = pledges.find(p => p.id === id)
+    const { data, error } = await deletePledgeById(id)
+    // data will be [] if RLS silently blocked the delete (no rows affected)
+    if (error || !data?.length) {
+      showToast('error', error
+        ? `Delete failed: ${error.message}`
+        : 'Delete blocked by database — run the updated supabase-fix.sql in Supabase SQL Editor.')
     } else {
+      if (pledgeToDelete) {
+        logPledgeTransaction({
+          type: 'delete',
+          house_number: String(pledgeToDelete.house_number),
+          name: pledgeToDelete.name,
+          amount: pledgeToDelete.amount,
+          message: pledgeToDelete.message,
+        })
+      }
       setPledges(prev => prev.filter(p => p.id !== id))
       showToast('success', 'Pledge removed.')
     }
@@ -504,19 +525,42 @@ function getTierBadge(message) {
   return { label: 'Pledge', cls: 'text-sunrise-300 bg-sunrise-900/40 border-sunrise-700/60' }
 }
 
-function Transactions({ pledges }) {
-  const sorted = [...pledges].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+function getTypeBadge(type) {
+  if (type === 'delete') return { label: 'Removed',  cls: 'text-red-300    bg-red-900/40    border-red-700/60'    }
+  if (type === 'update') return { label: 'Updated',  cls: 'text-blue-300   bg-blue-900/40   border-blue-700/60'   }
+  return                        { label: 'Pledged',  cls: 'text-green-300  bg-green-900/40  border-green-700/60'  }
+}
+
+function Transactions() {
+  const [logs, setLogs]       = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(null)
+
+  useEffect(() => {
+    fetchPledgeLogs().then(({ data, error: err }) => {
+      if (err) setError(err.message)
+      else setLogs(data || [])
+      setLoading(false)
+    })
+  }, [])
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-white">Transactions</h1>
-        <span className="text-stone-500 text-sm">{sorted.length} record{sorted.length !== 1 ? 's' : ''}</span>
+        {!loading && <span className="text-stone-500 text-sm">{logs.length} record{logs.length !== 1 ? 's' : ''} · append-only</span>}
       </div>
 
-      {sorted.length === 0 ? (
+      {loading ? (
+        <div className="text-stone-500 text-sm text-center pt-10">Loading…</div>
+      ) : error ? (
+        <div className="bg-red-900/30 border border-red-700 rounded-xl p-6 text-red-300 text-sm">
+          Could not load transaction log: {error}.<br/>
+          Make sure you have run the latest <code className="bg-stone-700 px-1 rounded">supabase-fix.sql</code> to create the <code className="bg-stone-700 px-1 rounded">pledge_log</code> table.
+        </div>
+      ) : logs.length === 0 ? (
         <div className="bg-stone-800 border border-stone-700 rounded-xl p-10 text-center text-stone-500">
-          No transactions yet.
+          No transactions yet — pledge activity will appear here automatically.
         </div>
       ) : (
         <div className="bg-stone-800 border border-stone-700 rounded-xl overflow-hidden">
@@ -524,30 +568,40 @@ function Transactions({ pledges }) {
             <thead>
               <tr className="border-b border-stone-700 text-stone-500 text-xs uppercase tracking-wide">
                 <th className="text-left px-4 py-3">Date · AZ Time</th>
-                <th className="text-left px-4 py-3">Type</th>
+                <th className="text-left px-4 py-3">Event</th>
+                <th className="text-left px-4 py-3">Tier</th>
                 <th className="text-left px-4 py-3">Parcel</th>
                 <th className="text-right px-4 py-3">Amount</th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((p, i) => {
-                const badge = getTierBadge(p.message)
+              {logs.map((row, i) => {
+                const typeBadge = getTypeBadge(row.type)
+                const tierBadge = getTierBadge(row.message)
                 return (
-                  <tr key={p.id} className={`border-b border-stone-700/50 ${i % 2 === 0 ? '' : 'bg-stone-800/50'}`}>
+                  <tr key={row.id} className={`border-b border-stone-700/50 ${i % 2 === 0 ? '' : 'bg-stone-800/50'}`}>
                     <td className="px-4 py-3 text-stone-400 text-xs whitespace-nowrap">
-                      {formatArizonaTime(p.created_at)}
+                      {formatArizonaTime(row.created_at)}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${badge.cls}`}>
-                        {badge.label}
+                      <span className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${typeBadge.cls}`}>
+                        {typeBadge.label}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-stone-200 font-medium">{p.name}</span>
-                      <span className="text-stone-500 text-xs ml-2">#{p.house_number}</span>
+                      {row.type !== 'delete' && (
+                        <span className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${tierBadge.cls}`}>
+                          {tierBadge.label}
+                        </span>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-right text-sunrise-400 font-bold whitespace-nowrap">
-                      {formatCurrency(p.amount)}
+                    <td className="px-4 py-3">
+                      <span className="text-stone-200 font-medium">{row.name}</span>
+                      <span className="text-stone-500 text-xs ml-2">#{row.house_number}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold whitespace-nowrap"
+                      style={{ color: row.type === 'delete' ? '#f87171' : '#fb923c' }}>
+                      {row.type === 'delete' ? '—' : formatCurrency(row.amount)}
                     </td>
                   </tr>
                 )
@@ -650,7 +704,7 @@ export default function AdminPage() {
               : section === 'moderation'
                 ? <Moderation messages={messages} setMessages={setMessages} />
                 : section === 'transactions'
-                  ? <Transactions pledges={pledges} />
+                  ? <Transactions />
                   : <Finances pledges={pledges} setPledges={setPledges} goal={goal} setGoal={setGoal} />
           }
         </main>

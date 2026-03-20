@@ -65,7 +65,27 @@ export async function updatePledgeById(id, { name, amount, message }) {
 
 export async function deletePledgeById(id) {
   if (!supabase) return { error: { message: 'Supabase not configured' } }
-  return supabase.from('pledges').delete().eq('id', id)
+  // .select() makes Supabase return the deleted rows so we can detect
+  // a silent RLS block (returns [] instead of [{ id, ... }]).
+  return supabase.from('pledges').delete().eq('id', id).select()
+}
+
+// ── Pledge transaction log (append-only audit trail) ─────────────────────────
+
+export async function logPledgeTransaction({ type, house_number, name, amount, message }) {
+  if (!supabase) return { error: null }   // silently skip when not configured
+  return supabase
+    .from('pledge_log')
+    .insert([{ type, house_number: String(house_number ?? ''), name, amount, message }])
+}
+
+export async function fetchPledgeLogs() {
+  if (!supabase) return { data: [], error: null }
+  return supabase
+    .from('pledge_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(500)
 }
 
 // ── Admin: project settings (requires `settings` table: id, key text unique, value text) ──
