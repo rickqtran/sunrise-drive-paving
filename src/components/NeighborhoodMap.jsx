@@ -8,17 +8,20 @@ const HOUSEHOLDS  = 20
 const BASE_AMOUNT = GOAL / HOUSEHOLDS  // $10,000
 
 const TIERS = [
-  { id: 'basic',     label: 'Basic',     full: 'Basic Participation',    amount: BASE_AMOUNT,              icon: FiHome  },
-  { id: 'supporter', label: 'Supporter', full: 'Community Supporter',    amount: Math.round(BASE_AMOUNT * 1.15), icon: FiStar  },
-  { id: 'sponsor',   label: 'Sponsor',   full: 'Community Sponsor',      amount: null,                     icon: FiHeart },
+  { id: 'basic',     label: 'Basic',     full: 'Basic Participation',           amount: BASE_AMOUNT,                    icon: FiHome       },
+  { id: 'supporter', label: 'Supporter', full: 'Community Supporter',           amount: Math.round(BASE_AMOUNT * 1.15), icon: FiStar       },
+  { id: 'sponsor',   label: 'Sponsor',   full: 'Community Sponsor',             amount: null,                           icon: FiHeart      },
+  { id: 'other',     label: 'Other',     full: 'Custom Contribution',           amount: null,                           icon: FiDollarSign },
 ]
 const MIN_SPONSOR = Math.round(BASE_AMOUNT * 1.25)
+const MAX_OTHER   = BASE_AMOUNT - 1   // anything below Bronze ($9,999)
 
 // Parse tier from a pledge's message field
 function parseTier(pledge) {
   const msg = pledge?.message || ''
   if (msg.includes('Community Sponsor'))   return 'sponsor'
   if (msg.includes('Community Supporter')) return 'supporter'
+  if (msg.includes('Custom Contribution')) return 'other'
   return 'basic'
 }
 
@@ -27,6 +30,7 @@ const TIER_STYLE = {
   basic:     { fill: '#3b1a05', fillHov: '#5c2d0e', stroke: '#cd7f32', text: '#e8a87c', dot: '#cd7f32', label: 'Bronze' },
   supporter: { fill: '#1e2535', fillHov: '#2d3a50', stroke: '#a8a9ad', text: '#d1d5db', dot: '#a8a9ad', label: 'Silver' },
   sponsor:   { fill: '#2d1e00', fillHov: '#4a3200', stroke: '#ffd700', text: '#fbbf24', dot: '#ffd700', label: 'Gold'   },
+  other:     { fill: '#052e16', fillHov: '#14532d', stroke: '#22c55e', text: '#86efac', dot: '#4ade80', label: 'Other'  },
 }
 
 // ── SVG coordinate constants ──────────────────────────────────────────────────
@@ -347,7 +351,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
 
   // Derived pledge amount from tier selection
   const selectedTier  = TIERS.find(t => t.id === tier)
-  const pledgeAmount  = tier === 'sponsor'
+  const pledgeAmount  = (tier === 'sponsor' || tier === 'other')
     ? (parseFloat(customAmount) || 0)
     : selectedTier.amount
 
@@ -357,7 +361,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
     const ep = sel ? (pledgesForParcel(sel, pledges)[0] ?? null) : null
     const existingTier = ep ? parseTier(ep) : 'basic'
     setTier(existingTier)
-    setCustomAmount(ep && existingTier === 'sponsor' ? String(ep.amount) : '')
+    setCustomAmount(ep && (existingTier === 'sponsor' || existingTier === 'other') ? String(ep.amount) : '')
     setForm({
       name:    ep?.name    ?? '',
       message: ep?.message ? ep.message.replace(/^\[.*?\]\s*/, '') : '',
@@ -366,7 +370,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
 
   async function handlePledge(e) {
     e.preventDefault()
-    if (!sel || !form.name || pledgeAmount < 100) return
+    if (!sel || !form.name || pledgeAmount <= 0) return
     setFormState('submitting')
     const houseNum = (sel.propAddress || '').match(/^(\d+)/)?.[1] || ''
     // Encode tier into the message so it can be parsed later for colouring
@@ -450,6 +454,10 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded border" style={{ background: '#2d1e00', borderColor: '#ffd700' }} />
             <span className="text-stone-300">Gold <span className="text-stone-500">(Sponsor)</span></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded border" style={{ background: '#052e16', borderColor: '#22c55e' }} />
+            <span className="text-stone-300">Green <span className="text-stone-500">(Other)</span></span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded border bg-stone-700 border-stone-500" />
@@ -727,8 +735,8 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
                       {existingPledge ? 'Update Pledge' : 'Record a Pledge'}
                     </p>
 
-                    {/* Tier selector pills */}
-                    <div className="grid grid-cols-3 gap-1.5">
+                    {/* Tier selector pills — 2×2 grid */}
+                    <div className="grid grid-cols-2 gap-1.5">
                       {TIERS.map(t => {
                         const ts      = TIER_STYLE[t.id]
                         const active  = tier === t.id
@@ -737,7 +745,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
                           <button
                             key={t.id}
                             type="button"
-                            onClick={() => setTier(t.id)}
+                            onClick={() => { setTier(t.id); setCustomAmount('') }}
                             className="flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg text-xs font-semibold transition-all"
                             style={active
                               ? { background: ts.fill, border: `2px solid ${ts.stroke}`, color: ts.dot }
@@ -750,14 +758,14 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
                                 ? (t.amount % 1000 === 0
                                     ? `$${t.amount / 1000}K`
                                     : `$${(t.amount / 1000).toFixed(1)}K`)
-                                : 'Custom'}
+                                : t.id === 'other' ? `< $${BASE_AMOUNT / 1000}K` : 'Custom'}
                             </span>
                           </button>
                         )
                       })}
                     </div>
 
-                    {/* Sponsor custom amount */}
+                    {/* Gold (Sponsor) custom amount — red */}
                     {tier === 'sponsor' && (
                       <div>
                         <p className="text-red-400 text-xs font-semibold mb-1 flex items-center gap-1">
@@ -784,8 +792,36 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
                       </div>
                     )}
 
-                    {/* Display fixed amount for non-sponsor tiers */}
-                    {tier !== 'sponsor' && (
+                    {/* Other tier custom amount — green */}
+                    {tier === 'other' && (
+                      <div>
+                        <p className="text-green-400 text-xs font-semibold mb-1 flex items-center gap-1">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500" />
+                          Any amount up to ${MAX_OTHER.toLocaleString()}
+                        </p>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-green-400 font-bold text-sm">$</span>
+                          <input
+                            type="number"
+                            placeholder="e.g. 500"
+                            min={1}
+                            max={MAX_OTHER}
+                            value={customAmount}
+                            onChange={e => setCustomAmount(e.target.value)}
+                            className="w-full rounded-lg pl-7 pr-3 py-2.5 text-white text-sm font-semibold placeholder:text-green-400/40 focus:outline-none"
+                            style={{
+                              background: '#052e16',
+                              border: '2px solid #22c55e',
+                              boxShadow: '0 0 0 3px rgba(34,197,94,0.15)',
+                            }}
+                            required
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Display fixed amount for Bronze / Silver */}
+                    {tier !== 'sponsor' && tier !== 'other' && (
                       <div className="text-xs rounded-lg px-3 py-2 font-semibold"
                         style={{ background: TIER_STYLE[tier].fill, color: TIER_STYLE[tier].dot, border: `1px solid ${TIER_STYLE[tier].stroke}55` }}>
                         Pledge amount: ${TIERS.find(t => t.id === tier)?.amount?.toLocaleString()}
@@ -809,7 +845,11 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
                     />
                     <button
                       type="submit"
-                      disabled={formState === 'submitting' || (tier === 'sponsor' && pledgeAmount < MIN_SPONSOR)}
+                      disabled={
+                        formState === 'submitting'
+                        || (tier === 'sponsor' && pledgeAmount < MIN_SPONSOR)
+                        || (tier === 'other' && (pledgeAmount <= 0 || pledgeAmount > MAX_OTHER))
+                      }
                       className="w-full font-semibold py-2 rounded-lg text-sm transition-all disabled:opacity-50"
                       style={{
                         background: TIER_STYLE[tier].stroke,

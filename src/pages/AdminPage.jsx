@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   FiLogOut, FiHome, FiMessageSquare, FiDollarSign,
   FiTrash2, FiEdit2, FiCheck, FiX, FiMenu, FiAlertCircle,
-  FiCheckCircle, FiRefreshCw,
+  FiCheckCircle, FiRefreshCw, FiClock,
 } from 'react-icons/fi'
 import { GiRoad } from 'react-icons/gi'
 import {
@@ -84,9 +84,10 @@ function LoginScreen({ onSuccess }) {
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 const NAV = [
-  { id: 'home',       label: 'Dashboard',  icon: FiHome },
-  { id: 'moderation', label: 'Moderation', icon: FiMessageSquare },
-  { id: 'finances',   label: 'Finances',   icon: FiDollarSign },
+  { id: 'home',         label: 'Dashboard',    icon: FiHome },
+  { id: 'moderation',   label: 'Moderation',   icon: FiMessageSquare },
+  { id: 'finances',     label: 'Finances',     icon: FiDollarSign },
+  { id: 'transactions', label: 'Transactions', icon: FiClock },
 ]
 
 function Sidebar({ active, setActive, onLogout, mobileOpen, setMobileOpen }) {
@@ -484,6 +485,81 @@ function Finances({ pledges, setPledges, goal, setGoal }) {
   )
 }
 
+// ── Transactions ──────────────────────────────────────────────────────────────
+
+function formatArizonaTime(iso) {
+  return new Date(iso).toLocaleString('en-US', {
+    timeZone: 'America/Phoenix',
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function getTierBadge(message) {
+  const msg = message || ''
+  if (msg.includes('Community Sponsor'))   return { label: 'Gold Pledge',   cls: 'text-yellow-300 bg-yellow-900/40 border-yellow-700/60' }
+  if (msg.includes('Community Supporter')) return { label: 'Silver Pledge', cls: 'text-stone-300  bg-stone-700/50  border-stone-500/60' }
+  if (msg.includes('Custom Contribution')) return { label: 'Other Pledge',  cls: 'text-green-300  bg-green-900/40  border-green-700/60'  }
+  if (msg.includes('Basic Participation')) return { label: 'Bronze Pledge', cls: 'text-orange-300 bg-orange-900/40 border-orange-700/60' }
+  return { label: 'Pledge', cls: 'text-sunrise-300 bg-sunrise-900/40 border-sunrise-700/60' }
+}
+
+function Transactions({ pledges }) {
+  const sorted = [...pledges].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-white">Transactions</h1>
+        <span className="text-stone-500 text-sm">{sorted.length} record{sorted.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {sorted.length === 0 ? (
+        <div className="bg-stone-800 border border-stone-700 rounded-xl p-10 text-center text-stone-500">
+          No transactions yet.
+        </div>
+      ) : (
+        <div className="bg-stone-800 border border-stone-700 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-stone-700 text-stone-500 text-xs uppercase tracking-wide">
+                <th className="text-left px-4 py-3">Date · AZ Time</th>
+                <th className="text-left px-4 py-3">Type</th>
+                <th className="text-left px-4 py-3">Parcel</th>
+                <th className="text-right px-4 py-3">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((p, i) => {
+                const badge = getTierBadge(p.message)
+                return (
+                  <tr key={p.id} className={`border-b border-stone-700/50 ${i % 2 === 0 ? '' : 'bg-stone-800/50'}`}>
+                    <td className="px-4 py-3 text-stone-400 text-xs whitespace-nowrap">
+                      {formatArizonaTime(p.created_at)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${badge.cls}`}>
+                        {badge.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-stone-200 font-medium">{p.name}</span>
+                      <span className="text-stone-500 text-xs ml-2">#{p.house_number}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right text-sunrise-400 font-bold whitespace-nowrap">
+                      {formatCurrency(p.amount)}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main AdminPage ─────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const navigate = useNavigate()
@@ -573,7 +649,9 @@ export default function AdminPage() {
               ? <DashboardHome pledges={pledges} messages={messages} goal={goal} />
               : section === 'moderation'
                 ? <Moderation messages={messages} setMessages={setMessages} />
-                : <Finances pledges={pledges} setPledges={setPledges} goal={goal} setGoal={setGoal} />
+                : section === 'transactions'
+                  ? <Transactions pledges={pledges} />
+                  : <Finances pledges={pledges} setPledges={setPledges} goal={goal} setGoal={setGoal} />
           }
         </main>
       </div>
