@@ -911,12 +911,19 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
               onPlay={() => {
                 const el = videoRef.current
                 if (!el) return
-                if (el.requestFullscreen) el.requestFullscreen()
-                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
-                else if (el.mozRequestFullScreen) el.mozRequestFullScreen()
-                else if (el.msRequestFullscreen) el.msRequestFullscreen()
-                // iOS Safari — video-element-specific fullscreen
-                else if (el.webkitEnterFullscreen) el.webkitEnterFullscreen()
+                // iOS Safari must use webkitEnterFullscreen on the video element itself
+                // and must be checked before other webkit methods
+                const tryFullscreen = () => {
+                  try {
+                    if (el.webkitEnterFullscreen) { el.webkitEnterFullscreen(); return }
+                    if (el.requestFullscreen) { el.requestFullscreen(); return }
+                    if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return }
+                    if (el.mozRequestFullScreen) { el.mozRequestFullScreen(); return }
+                    if (el.msRequestFullscreen) { el.msRequestFullscreen(); return }
+                  } catch (e) {}
+                }
+                // Small delay ensures iOS has registered the play gesture
+                setTimeout(tryFullscreen, 50)
               }}
             >
               <source src="/videos/Instructions.mp4" type="video/mp4" />
