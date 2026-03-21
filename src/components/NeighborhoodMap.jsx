@@ -915,6 +915,8 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
                 else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
                 else if (el.mozRequestFullScreen) el.mozRequestFullScreen()
                 else if (el.msRequestFullscreen) el.msRequestFullscreen()
+                // iOS Safari — video-element-specific fullscreen
+                else if (el.webkitEnterFullscreen) el.webkitEnterFullscreen()
               }}
             >
               <source src="/videos/Instructions.mp4" type="video/mp4" />
