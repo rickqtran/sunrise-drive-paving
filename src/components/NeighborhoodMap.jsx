@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { upsertPledge, deletePledgeById, logPledgeTransaction } from '../lib/supabase'
 import { FiX, FiPhone, FiMail, FiMapPin, FiDollarSign, FiCheckCircle, FiInfo, FiHome, FiStar, FiHeart, FiRefreshCw } from 'react-icons/fi'
 
@@ -336,6 +336,7 @@ function formatAmountCompact(n) {
 }
 
 export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDeleted }) {
+  const videoRef = useRef(null)
   const [selected, setSelected]         = useState(null)
   const [hoveredId, setHoveredId]       = useState(null)
   const [tier, setTier]                 = useState('basic')
@@ -902,10 +903,19 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
           </div>
           <div className="max-w-3xl mx-auto rounded-xl overflow-hidden border border-stone-700 shadow-2xl bg-stone-900">
             <video
+              ref={videoRef}
               controls
               preload="metadata"
               className="w-full block"
               style={{ maxHeight: '520px' }}
+              onPlay={() => {
+                const el = videoRef.current
+                if (!el) return
+                if (el.requestFullscreen) el.requestFullscreen()
+                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
+                else if (el.mozRequestFullScreen) el.mozRequestFullScreen()
+                else if (el.msRequestFullscreen) el.msRequestFullscreen()
+              }}
             >
               <source src="/videos/Instructions.mp4" type="video/mp4" />
               Your browser does not support video playback.
