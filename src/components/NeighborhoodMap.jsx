@@ -475,16 +475,6 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
             <div className="w-4 h-4 rounded border" style={{ background: '#052e16', borderColor: '#22c55e' }} />
             <span className="text-stone-300">Green <span className="text-stone-500">(Other)</span></span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded border bg-stone-700 border-stone-500" />
-            <span className="text-stone-300">Not yet pledged</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded border bg-stone-900 border-stone-600 flex items-center justify-center">
-              <span className="text-stone-500 text-xs leading-none">–</span>
-            </div>
-            <span className="text-stone-300">Vacant lot</span>
-          </div>
         </div>
 
         {/* Map + Detail panel layout */}
