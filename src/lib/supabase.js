@@ -18,11 +18,6 @@ export async function fetchPledges() {
     .order('created_at', { ascending: false })
 }
 
-export async function insertPledge({ name, house_number, amount, message }) {
-  if (!supabase) return { error: { message: 'Supabase not configured' } }
-  return supabase.from('pledges').insert([{ name, house_number, amount, message }]).select()
-}
-
 // Replace any existing pledge(s) for this house_number with a single new one.
 // Tries both string and numeric forms of house_number to handle column type differences.
 export async function upsertPledge({ name, house_number, amount, message }) {
