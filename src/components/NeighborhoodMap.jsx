@@ -902,6 +902,27 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
         <p className="text-center text-stone-600 text-xs mt-4">
           ← Scroll map to see all parcels · Tap a parcel to select
         </p>
+
+        {/* How-to video */}
+        <div className="mt-12">
+          <div className="text-center mb-6">
+            <span className="text-sunrise-400 font-semibold text-sm uppercase tracking-wider">Step-by-step walkthrough</span>
+            <h3 className="text-2xl font-bold text-white mt-1 mb-1">How to Make a Pledge</h3>
+            <p className="text-stone-400 text-sm">Watch this short video to see how to select your parcel and record your pledge.</p>
+          </div>
+          <div className="max-w-3xl mx-auto rounded-xl overflow-hidden border border-stone-700 shadow-2xl bg-stone-900">
+            <video
+              controls
+              preload="metadata"
+              className="w-full block"
+              style={{ maxHeight: '520px' }}
+            >
+              <source src="/videos/Instructions.mp4" type="video/mp4" />
+              Your browser does not support video playback.
+            </video>
+          </div>
+        </div>
+
       </div>
     </section>
   )
