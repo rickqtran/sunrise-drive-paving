@@ -3,6 +3,10 @@ import { FiChevronDown } from 'react-icons/fi'
 
 const FAQS = [
   {
+    q: "Why won't the city or county government pave this road for us?",
+    a: "Government agencies only fund paving for roads that are part of a wider public transportation network. Sunrise Drive is a dead-end road, so it doesn't meet that criteria. Typically, residential roads like ours are paved by community home builders and the cost is recouped through home purchases. Sunrise Drive was never developed that way — there is no community builder behind it. If we want this road paved, we have to fund it ourselves.",
+  },
+  {
     q: 'How will the funds be collected and managed?',
     a: "No money is collected until we have firm written commitments covering the full project cost. Once we reach our goal, funds will be gathered through a formal agreement reviewed by all participating households. A transparent ledger of contributions and expenditures will be shared with every neighbor throughout the process.",
   },
