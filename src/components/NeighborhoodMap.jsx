@@ -1064,13 +1064,13 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
                         {/* Name */}
                         <text x={pcx} y={p.y + 11} textAnchor="middle" fontSize="7" fill="#a8a29e">{nameLine}</text>
                         {/* Current value */}
-                        <text x={pcx} y={pcy - 13} textAnchor="middle" dominantBaseline="middle" fontSize={fs} fontWeight="bold" fill="#fb923c">{fmtVal(val)}</text>
-                        {/* Value increase */}
-                        <text x={pcx} y={pcy + 1} textAnchor="middle" dominantBaseline="middle" fontSize={fs - 1} fontWeight="bold" fill="#fb923c">+{fmtVal(increase)}</text>
+                        <text x={pcx} y={pcy - 22} textAnchor="middle" dominantBaseline="middle" fontSize={fs} fontWeight="bold" fill="#fb923c">{fmtVal(val)}</text>
+                        {/* Value increase — doubled font size, green */}
+                        <text x={pcx} y={pcy} textAnchor="middle" dominantBaseline="middle" fontSize={(fs - 1) * 2} fontWeight="bold" fill="#4ade80">+{fmtVal(increase)}</text>
                         {/* Divider */}
-                        <line x1={p.x + 5} y1={pcy + 9} x2={p.x + p.w - 5} y2={pcy + 9} stroke="#374151" strokeWidth={0.5} />
+                        <line x1={p.x + 5} y1={pcy + fs + 4} x2={p.x + p.w - 5} y2={pcy + fs + 4} stroke="#374151" strokeWidth={0.5} />
                         {/* Projected value */}
-                        <text x={pcx} y={pcy + 20} textAnchor="middle" dominantBaseline="middle" fontSize={fs} fontWeight="bold" fill="#fb923c">{fmtVal(projected)}</text>
+                        <text x={pcx} y={pcy + fs + 14} textAnchor="middle" dominantBaseline="middle" fontSize={fs} fontWeight="bold" fill="#fb923c">{fmtVal(projected)}</text>
                       </>
                     )}
                   </g>
