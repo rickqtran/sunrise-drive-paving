@@ -359,7 +359,7 @@ const ZESTIMATES = {
   '300-15-007G':  null,     // Chavez Debbie       – vacant lot
   '300-15-007H':  null,     // Hernandez Jonathan  – vacant lot
   '300-15-007I':  860100,   // Rick Tran           – 2817 W Sunrise Dr
-  '300-15-007J':  58700,    // Banuelos Uriel      – 2739 W Sunrise Dr (land value)
+  '300-15-007J':  713000,   // Banuelos Uriel      – 2739 W Sunrise Dr
   '300-15-007K':  652900,   // Israel              – 2735 W Sunrise Dr
   '300-15-102B':  629300,   // Sauceda Richard     – 2723 W Sunrise Dr
   '300-15-011B':  null,     // Segoviano Galaz     – 10320 S 27th Ave (no data)
