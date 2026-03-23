@@ -335,6 +335,48 @@ function formatAmountCompact(n) {
   return '$' + n.toLocaleString()
 }
 
+// ── Property value map ────────────────────────────────────────────────────────
+// Zillow Zestimate values as of March 2026
+const ZESTIMATES = {
+  '300-15-005T':  742200,   // Jose Burciaga    – 3035 W Carver Rd
+  '300-15-005N':  600300,   // Hilda Valenzuela – 10224 S 30th Dr
+  '300-15-005R':  638300,   // Tim              – 10412 S 30th Dr
+  '300-15-005':   950000,   // Roldan / Nava Santos – 2974 W Sunrise Dr
+  '300-15-005P':  723200,   // Ron Leon         – 2948 W Sunrise Dr
+  '300-15-134A':  219100,   // Leo Peneda       – 2912 W Sunrise Dr
+  '300-15-003I':  null,     // Carlos Avelar    – 2900 W Sunrise Dr (no data)
+  '300-15-003J':  573200,   // Dan              – 2848 W Sunrise Dr
+  '300-15-003H':  677300,   // Gulermo          – 2834 W Sunrise Dr
+  '300-15-003N':  551100,   // Nazari Elaheh    – 2828 W Sunrise Dr
+  '300-15-003K':  null,     // Garcia Sylvia    – vacant lot
+  '300-15-003R':  null,     // Persha Mary S    – vacant lot
+  '300-15-003Q':  null,     // Parcel 003Q      – vacant lot
+  '300-15-005G':  610900,   // Vaterlaus        – 2975 W Sunrise Dr
+  '300-15-005F':  714900,   // Sam & Amy        – 2939 W Sunrise Dr
+  '300-15-100C':  null,     // Saenz Robert     – 2929 W Sunrise Dr (no data)
+  '300-15-007E':  936400,   // Green Mark       – 2903 W Sunrise Dr
+  '300-15-007G':  null,     // Chavez Debbie    – vacant lot
+  '300-15-007H':  null,     // Hernandez Jonathan – vacant lot
+  '300-15-007I':  860100,   // Rick Tran        – 2817 W Sunrise Dr
+  '300-15-007J':  58700,    // Banuelos Uriel   – 2739 W Sunrise Dr (land value)
+  '300-15-007K':  652900,   // Israel           – 2735 W Sunrise Dr
+  '300-15-102B':  629300,   // Sauceda Richard  – 2723 W Sunrise Dr
+  '300-15-011B':  null,     // Segoviano Galaz  – 10320 S 27th Ave (no data)
+}
+
+function fmtVal(n) {
+  if (n == null) return null
+  if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
+  return `$${Math.round(n / 1000)}K`
+}
+
+function valueColor(val, isVacant) {
+  if (isVacant || val == null) return { fill: '#1c1917', stroke: '#44403c' }
+  if (val >= 750000) return { fill: '#0d2318', stroke: '#4ade80' }   // green  – high
+  if (val >= 500000) return { fill: '#0c1a2e', stroke: '#60a5fa' }   // blue   – mid
+  return { fill: '#1c1207', stroke: '#f59e0b' }                      // amber  – low / land-only
+}
+
 export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDeleted }) {
   const videoRef = useRef(null)
   const [selected, setSelected]         = useState(null)
@@ -930,6 +972,126 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
               Your browser does not support video playback.
             </video>
           </div>
+        </div>
+
+        {/* ── Property Value Increase ─────────────────────────────────────── */}
+        <div className="mt-16">
+          <div className="text-center mb-8">
+            <span className="text-sunrise-400 font-semibold text-sm uppercase tracking-wider">Financial Impact</span>
+            <h3 className="text-2xl font-bold text-white mt-1 mb-2">Potential Property Value Increase</h3>
+            <p className="text-stone-400 text-sm max-w-2xl mx-auto">
+              Based on current Zillow Zestimates, paving Sunrise Drive is projected to increase each home's value by approximately 10%. Here's what that means for your neighborhood.
+            </p>
+          </div>
+
+          {/* Summary stat cards */}
+          {(() => {
+            const known = PARCELS.filter(p => ZESTIMATES[p.id] != null)
+            const totalCurrent   = known.reduce((s, p) => s + ZESTIMATES[p.id], 0)
+            const totalProjected = Math.round(totalCurrent * 1.1)
+            const totalGain      = totalProjected - totalCurrent
+            return (
+              <div className="grid grid-cols-3 gap-4 mb-8 max-w-2xl mx-auto">
+                <div className="bg-stone-800 border border-stone-700 rounded-xl p-4 text-center">
+                  <div className="text-xs text-stone-500 uppercase tracking-wide mb-1">Current Total Value</div>
+                  <div className="text-xl font-bold text-white">${(totalCurrent / 1000000).toFixed(2)}M</div>
+                  <div className="text-xs text-stone-500 mt-0.5">{known.length} homes with data</div>
+                </div>
+                <div className="bg-stone-800 border border-stone-700 rounded-xl p-4 text-center">
+                  <div className="text-xs text-stone-500 uppercase tracking-wide mb-1">After Paving (+10%)</div>
+                  <div className="text-xl font-bold text-green-400">${(totalProjected / 1000000).toFixed(2)}M</div>
+                  <div className="text-xs text-stone-500 mt-0.5">projected total</div>
+                </div>
+                <div className="bg-stone-800 border border-green-800 rounded-xl p-4 text-center">
+                  <div className="text-xs text-stone-500 uppercase tracking-wide mb-1">Neighborhood Gain</div>
+                  <div className="text-xl font-bold text-green-400">+${(totalGain / 1000000).toFixed(2)}M</div>
+                  <div className="text-xs text-stone-500 mt-0.5">across {known.length} properties</div>
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* Property value SVG map */}
+          <div className="overflow-x-auto rounded-xl border border-stone-700 bg-stone-900 shadow-xl">
+            <svg
+              viewBox={`0 0 ${VB_W} ${VB_H}`}
+              className="w-full min-w-[640px]"
+              style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif', display: 'block' }}
+            >
+              <rect x={0} y={0} width={VB_W} height={VB_H} fill="#1c1917" />
+
+              {/* Compass */}
+              <text x={VB_W / 2} y={N_TOP + 10} textAnchor="middle" fontSize="9" fill="#78716c" letterSpacing="1.5">
+                ▲ N  ·  W DESERT VIEW DR
+              </text>
+
+              {/* Road surface */}
+              <rect x={ROAD_X1} y={ROAD_Y1} width={ROAD_X2 - ROAD_X1} height={ROAD_Y2 - ROAD_Y1} fill="#374151" />
+              {Array.from({ length: 30 }, (_, i) => (
+                <rect key={i} x={S30_X2 + 10 + i * 40} y={ROAD_Y1 + (ROAD_Y2 - ROAD_Y1) / 2 - 2} width={22} height={4} rx={2} fill="#fbbf24" opacity={0.55} />
+              ))}
+              <text x={(ROAD_X1 + ROAD_X2) / 2} y={(ROAD_Y1 + ROAD_Y2) / 2 + 4} textAnchor="middle" fontSize="10" fill="#9ca3af" letterSpacing="2">
+                W SUNRISE DR
+              </text>
+
+              {/* S 30th Dr */}
+              <rect x={S30_X1} y={N_TOP} width={S30_X2 - S30_X1} height={VB_H - N_TOP} fill="#374151" />
+
+              {/* Parcels */}
+              {PARCELS.map(p => {
+                const val       = ZESTIMATES[p.id]
+                const projected = val != null ? Math.round(val * 1.1) : null
+                const { fill: bg, stroke: bd } = valueColor(val, p.emptyLot)
+                const pcx = p.x + p.w / 2
+                const pcy = p.y + p.h / 2
+                const nameLine = p.label.split('\n').slice(-1)[0]
+
+                return (
+                  <g key={p.id}>
+                    <rect x={p.x + 1} y={p.y + 1} width={p.w - 2} height={p.h - 2} rx={3} fill={bg} stroke={bd} strokeWidth={1.5} />
+                    {p.emptyLot ? (
+                      <text x={pcx} y={pcy} textAnchor="middle" dominantBaseline="middle" fontSize="8" fill="#57534e">vacant</text>
+                    ) : val == null ? (
+                      <>
+                        <text x={pcx} y={pcy - 6} textAnchor="middle" dominantBaseline="middle" fontSize="7" fill="#a8a29e">{nameLine}</text>
+                        <text x={pcx} y={pcy + 7} textAnchor="middle" dominantBaseline="middle" fontSize="9" fill="#57534e">N/A</text>
+                      </>
+                    ) : (
+                      <>
+                        <text x={pcx} y={p.y + 10} textAnchor="middle" fontSize="7" fill="#a8a29e">{nameLine}</text>
+                        <text x={pcx} y={pcy - 4} textAnchor="middle" dominantBaseline="middle" fontSize={p.w < 80 ? 9 : 11} fontWeight="bold" fill="#f5f5f4">{fmtVal(val)}</text>
+                        <line x1={p.x + 6} y1={pcy + 6} x2={p.x + p.w - 6} y2={pcy + 6} stroke="#44403c" strokeWidth={0.5} />
+                        <text x={pcx} y={pcy + 17} textAnchor="middle" dominantBaseline="middle" fontSize={p.w < 80 ? 8 : 9} fontWeight="bold" fill="#4ade80">▲ {fmtVal(projected)}</text>
+                      </>
+                    )}
+                  </g>
+                )
+              })}
+            </svg>
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap gap-4 justify-center mt-4 text-xs text-stone-500">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded border" style={{ background: '#0d2318', borderColor: '#4ade80' }} />
+              High value ($750K+)
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded border" style={{ background: '#0c1a2e', borderColor: '#60a5fa' }} />
+              Mid value ($500K–$750K)
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded border" style={{ background: '#1c1207', borderColor: '#f59e0b' }} />
+              Low / land-only (&lt;$500K)
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded border bg-stone-800 border-stone-600" />
+              No data / vacant
+            </div>
+          </div>
+          <p className="text-center text-stone-600 text-xs mt-2">
+            Source: Zillow Zestimate · March 2026 · Projected values assume 10% appreciation after road paving · Some values reflect land only
+          </p>
         </div>
 
       </div>
