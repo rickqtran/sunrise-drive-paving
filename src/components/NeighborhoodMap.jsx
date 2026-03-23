@@ -362,7 +362,7 @@ const ZESTIMATES = {
   '300-15-007J':  713000,   // Banuelos Uriel      – 2739 W Sunrise Dr
   '300-15-007K':  652900,   // Israel              – 2735 W Sunrise Dr
   '300-15-102B':  629300,   // Sauceda Richard     – 2723 W Sunrise Dr
-  '300-15-011B':  null,     // Segoviano Galaz     – 10320 S 27th Ave (no data)
+  '300-15-011B':  1450000,  // Segoviano Galaz     – 10320 S 27th Ave
 }
 
 function fmtVal(n) {
