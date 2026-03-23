@@ -95,7 +95,7 @@ export default function App() {
         <PhotoGallery />
         <WhyPave />
         <FundingTracker pledges={pledges} goal={goal} />
-        <NeighborhoodMap pledges={pledges} onNewPledge={handleNewPledge} onPledgeDeleted={handlePledgeDeleted} />
+        <NeighborhoodMap pledges={pledges} goal={goal} onNewPledge={handleNewPledge} onPledgeDeleted={handlePledgeDeleted} />
         <FAQ />
         <CommunityBoard />
       </main>

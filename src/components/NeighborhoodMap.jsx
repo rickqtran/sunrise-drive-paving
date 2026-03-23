@@ -371,7 +371,7 @@ function fmtVal(n) {
   return `$${Math.round(n / 1000)}K`
 }
 
-export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDeleted }) {
+export default function NeighborhoodMap({ pledges = [], goal = 200000, onNewPledge, onPledgeDeleted }) {
   const videoRef = useRef(null)
   const [selected, setSelected]         = useState(null)
   const [hoveredId, setHoveredId]       = useState(null)
@@ -1003,7 +1003,7 @@ export default function NeighborhoodMap({ pledges = [], onNewPledge, onPledgeDel
                 </div>
                 <div className="bg-stone-800 border border-sunrise-700/50 rounded-xl p-4 text-center">
                   <div className="text-xs text-stone-500 uppercase tracking-wide mb-1">Paving Investment</div>
-                  <div className="text-xl font-bold text-sunrise-400">$200K</div>
+                  <div className="text-xl font-bold text-sunrise-400">{fmtVal(goal)}</div>
                   <div className="text-xs text-stone-500 mt-0.5">total project cost</div>
                 </div>
               </div>
