@@ -974,7 +974,7 @@ export default function NeighborhoodMap({ pledges = [], goal = 200000, onNewPled
             <span className="text-sunrise-400 font-semibold text-sm uppercase tracking-wider">Financial Impact</span>
             <h3 className="text-2xl font-bold text-white mt-1 mb-2">Potential Property Value Increase</h3>
             <p className="text-stone-400 text-sm max-w-2xl mx-auto">
-              Based on current Zillow Zestimates, paving Sunrise Drive is projected to increase each home's value by approximately 10%. Here's what that means for your neighborhood.
+              Based on current Zillow Zestimates, paving Sunrise Drive is projected to increase each home's value by 5%–15%. Here's what that means for our neighborhood.
             </p>
           </div>
 
