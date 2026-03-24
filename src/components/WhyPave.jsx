@@ -4,7 +4,7 @@ const REASONS = [
   {
     icon: FiHome,
     title: 'Property Value',
-    stat: '+5–10%',
+    stat: '+5–15%',
     statLabel: 'potential home equity increase',
     body: "Paved roads are a key factor in property appraisals. Neighbors on comparable paved streets in Laveen consistently see higher valuations. A paved Sunrise Drive is an investment in your home — not just the road beneath your feet.",
     accent: 'border-green-300',
